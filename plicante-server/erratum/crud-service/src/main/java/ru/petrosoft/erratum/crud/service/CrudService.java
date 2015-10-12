@@ -25,9 +25,16 @@ public class CrudService {
     @Resource(lookup = "java:/jdbc/data")
     DataSource data;
 
-    public Instance getBlankInstance(Long templateId) {
-        Instance result = null;
-
+    /**
+     * Возвращает экземпляр объекта по заданному шаблону в первоначальном
+     * статусе без занесения в базу данных.
+     *
+     * @param templateId - идентификатор шаблона.
+     * @return - экземпляр объекта.
+     */
+    public Instance getSketchInstance(Long templateId) {
+        ru.petrosoft.erratum.metamodel.transfer.Template template = metamodel.getTemplate(templateId, null);
+        Instance result = InstanceInitializer.createInstanceFromTemplate(template);
         return result;
     }
 
@@ -38,8 +45,8 @@ public class CrudService {
     }
 
     /**
-     * Создает новый экземпляр объекта по заданному шаблону в первоначальном
-     * статусе и возвращает его.
+     * Создает в базе новый экземпляр объекта по заданному шаблону в
+     * первоначальном статусе и возвращает его.
      *
      * @param templateId - идентификатор шаблона.
      * @return - экземпляр объекта.

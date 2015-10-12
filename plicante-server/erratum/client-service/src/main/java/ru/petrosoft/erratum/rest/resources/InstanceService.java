@@ -39,11 +39,7 @@ public class InstanceService {
     @Path("{templateId}")
     public Instance getSkeleton(@PathParam("templateId") Long templateId) {
         try {
-            Instance result = new Instance();
-            result.version = 3L;
-            result.template = new Template();
-            result.template.id = templateId;
-            return result;
+            return lookupCrudService().getSketchInstance(templateId);
         } catch (Exception e) {
             throw new ErratumRestException(e);
         }

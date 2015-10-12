@@ -139,7 +139,15 @@ public class MetamodelService {
                 Map<String, Status> visibleIn = link.templateA.equals(model) ? link.visibleAsAIn : link.visibleAsBIn;
                 if (visibleIn.containsKey(status.code)) {
                     ru.petrosoft.erratum.metamodel.transfer.Link resultLink = new ru.petrosoft.erratum.metamodel.transfer.Link(link);
+                    rolePermissions = new HashSet<>(link.editableFor.keySet());
+                    rolePermissions.retainAll(roles);
                     resultLink.editable = false;
+                    if (!rolePermissions.isEmpty()) {
+                        Map<String, Status> editableIn = link.templateA.equals(model) ? link.editableAsAIn : link.editableAsBIn;
+                        if (editableIn.containsKey(status.code)) {
+                            resultLink.editable = true;
+                        }
+                    }
                     result.put(resultLink.code, resultLink);
                 }
             }

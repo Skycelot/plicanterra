@@ -5,6 +5,7 @@ import java.util.Map;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import ru.petrosoft.erratum.metamodel.User;
+import ru.petrosoft.erratum.security.login.PrincipalInfo;
 
 /**
  *
@@ -20,6 +21,10 @@ public class SessionService {
     }
 
     public String startSession(String login, String encodedToken) {
+        throw new UnsupportedOperationException("Not yet implemented!");
+    }
+
+    public PrincipalInfo findSession(String sessionId) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 

@@ -35,7 +35,7 @@ public class SessionService {
     }
     
     @POST
-    public String startSession(String login, String encodedToken) {
+    public String startSession(String login, String token, String encodedToken) {
         try {
             return lookupSessionService().startSession(login, encodedToken);
         } catch (Exception e) {

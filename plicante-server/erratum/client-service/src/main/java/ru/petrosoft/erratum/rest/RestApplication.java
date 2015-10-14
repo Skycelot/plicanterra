@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
+import ru.petrosoft.erratum.rest.resources.SessionService;
 
 /**
  *
@@ -25,6 +26,7 @@ public class RestApplication extends Application {
         result.add(ErratumRestExceptionHandler.class);
         result.add(InstanceWriter.class);
         result.add(TestService.class);
+        result.add(SessionService.class);
         return result;
     }
 

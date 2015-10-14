@@ -20,6 +20,7 @@ import ru.petrosoft.erratum.metamodel.Profile;
 import ru.petrosoft.erratum.metamodel.Project;
 import ru.petrosoft.erratum.metamodel.Role;
 import ru.petrosoft.erratum.metamodel.User;
+import ru.petrosoft.erratum.security.login.PrincipalInfo;
 import ru.petrosoft.newage.propertiesservice.ApplicationPropertiesBean;
 
 /**
@@ -79,6 +80,18 @@ public class SecurityService {
                     }
                 }
             }
+        }
+        return result;
+    }
+
+    public boolean userExists(String login) {
+        return users.containsKey(login);
+    }
+
+    public User getUser(String login) {
+        User result = null;
+        if (users.containsKey(login)) {
+            result = users.get(login);
         }
         return result;
     }

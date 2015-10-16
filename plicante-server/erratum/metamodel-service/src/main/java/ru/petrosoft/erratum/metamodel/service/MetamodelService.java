@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.annotation.security.PermitAll;
 import javax.ejb.EJB;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
@@ -32,6 +33,7 @@ import ru.petrosoft.newage.propertiesservice.ApplicationPropertiesBean;
 @Startup
 @Lock(LockType.READ)
 @EJB(name = "java:global/erratum/MetamodelService", beanInterface = MetamodelService.class)
+@PermitAll
 public class MetamodelService {
 
     Project project;

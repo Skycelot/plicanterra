@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.annotation.security.PermitAll;
 import javax.ejb.EJB;
 import javax.ejb.EJBContext;
 import javax.ejb.Lock;
@@ -20,7 +21,8 @@ import ru.petrosoft.erratum.metamodel.Profile;
 import ru.petrosoft.erratum.metamodel.Project;
 import ru.petrosoft.erratum.metamodel.Role;
 import ru.petrosoft.erratum.metamodel.User;
-import ru.petrosoft.erratum.security.login.PrincipalInfo;
+import ru.petrosoft.erratum.security.core.ErratumPrincipal;
+import ru.petrosoft.erratum.security.core.RolePrincipal;
 import ru.petrosoft.newage.propertiesservice.ApplicationPropertiesBean;
 
 /**
@@ -30,6 +32,7 @@ import ru.petrosoft.newage.propertiesservice.ApplicationPropertiesBean;
 @Startup
 @Lock(LockType.READ)
 @EJB(name = "java:global/erratum/SecurityService", beanInterface = SecurityService.class)
+@PermitAll
 public class SecurityService {
 
     private Map<String, User> users;
@@ -69,17 +72,16 @@ public class SecurityService {
      */
     public List<String> getCurrentUserRoles() {
         List<String> result = Collections.emptyList();
-        if (ctx.getCallerPrincipal() != null) {
-            String login = ctx.getCallerPrincipal().getName();
-            if (login != null) {
-                User user = users.get(login);
-                if (user != null) {
-                    result = new ArrayList<>(user.profile.roles.size());
-                    for (Role role : user.profile.roles) {
-                        result.add(role.code);
-                    }
+        if (ctx.getCallerPrincipal() instanceof ErratumPrincipal) {
+            ErratumPrincipal principal = (ErratumPrincipal) ctx.getCallerPrincipal();
+            if (principal.getRoles() != null && !principal.getRoles().isEmpty()) {
+                result = new ArrayList<>(principal.getRoles().size());
+                for (RolePrincipal role : principal.getRoles()) {
+                    result.add(role.getName());
                 }
             }
+        } else {
+            throw new IllegalStateException("Caller principal isn't instance of class ErratumPrincipal!");
         }
         return result;
     }

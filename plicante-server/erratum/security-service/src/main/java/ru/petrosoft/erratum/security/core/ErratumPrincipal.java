@@ -10,7 +10,7 @@ public class ErratumPrincipal implements Principal {
 
     private final String login;
     private String fullName;
-    private Set<String> roles;
+    private Set<RolePrincipal> roles;
 
     public ErratumPrincipal(String login) {
         this.login = login;
@@ -23,17 +23,17 @@ public class ErratumPrincipal implements Principal {
 
     public String getFullName() {
         return fullName;
-    }
+}
 
     public void setFullName(String fullName) {
         this.fullName = fullName;
     }
 
-    public Set<String> getRoles() {
+    public Set<RolePrincipal> getRoles() {
         return roles;
     }
 
-    public void setRoles(Set<String> roles) {
+    public void setRoles(Set<RolePrincipal> roles) {
         this.roles = roles;
     }
 }

@@ -1,7 +1,6 @@
 package ru.petrosoft.erratum.util;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;

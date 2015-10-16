@@ -1,10 +1,8 @@
 package ru.petrosoft.erratum.security.login;
 
 import java.security.Principal;
-import java.util.List;
 import java.util.Map;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
@@ -13,6 +11,7 @@ import javax.security.jacc.PolicyContext;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import org.slf4j.LoggerFactory;
+import ru.petrosoft.erratum.security.core.ErratumPrincipal;
 import ru.petrosoft.erratum.security.service.SessionService;
 
 /**
@@ -20,7 +19,7 @@ import ru.petrosoft.erratum.security.service.SessionService;
  */
 public class CookieCredentialLoginModule implements LoginModule {
 
-    private PrincipalInfo principalInfo;
+    private ErratumPrincipal principal;
     private Subject subject;
 
     @Override
@@ -41,18 +40,18 @@ public class CookieCredentialLoginModule implements LoginModule {
             }
             if (credentialCookie != null) {
                 SessionService sessionService = InitialContext.doLookup("java:global/erratum/SessionService");
-                principalInfo = sessionService.findSession(credentialCookie.getValue());
+                principal = sessionService.findSession(credentialCookie.getValue());
             }
         } catch (Exception e) {
             throw new LoginException(e.toString());
         }
-        return principalInfo != null;
+        return principal != null;
     }
 
     @Override
     public boolean commit() throws LoginException {
         boolean result = false;
-        if (principalInfo != null) {
+        if (principal != null) {
             try {
                 subject.getPrincipals().add(new Principal() {
 

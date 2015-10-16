@@ -3,6 +3,7 @@ package ru.petrosoft.erratum.crud.service;
 import java.io.IOException;
 import java.util.Collections;
 import javax.annotation.Resource;
+import javax.annotation.security.PermitAll;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.sql.DataSource;
@@ -17,6 +18,7 @@ import ru.petrosoft.erratum.crud.transfer.search.SearchResult;
  */
 @Stateless
 @EJB(name = "java:global/erratum/CrudService", beanInterface = CrudService.class)
+@PermitAll
 public class CrudService {
 
     @EJB(lookup = "java:global/erratum/MetamodelService")

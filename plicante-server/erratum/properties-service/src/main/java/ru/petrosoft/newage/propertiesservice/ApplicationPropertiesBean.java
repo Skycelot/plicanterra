@@ -1,6 +1,7 @@
 package ru.petrosoft.newage.propertiesservice;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.security.PermitAll;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
@@ -14,6 +15,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 @Singleton
 @Startup
 @EJB(name = "java:global/erratum/ApplicationPropertiesBean", beanInterface = ApplicationPropertiesBean.class)
+@PermitAll
 public class ApplicationPropertiesBean {
 
     private Configuration config;

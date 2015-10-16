@@ -9,6 +9,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.auth.spi.AbstractServerLoginModule;
+import ru.petrosoft.erratum.security.core.ErratumPrincipal;
 import ru.petrosoft.erratum.security.core.RolePrincipal;
 import ru.petrosoft.erratum.security.service.SessionService;
 
@@ -17,7 +18,7 @@ import ru.petrosoft.erratum.security.service.SessionService;
  */
 public class WildflyLoginModule extends AbstractServerLoginModule {
 
-    private PrincipalInfo principalInfo;
+    private ErratumPrincipal principal;
 
     @Override
     public boolean login() throws LoginException {
@@ -32,23 +33,23 @@ public class WildflyLoginModule extends AbstractServerLoginModule {
             }
             if (credentialCookie != null) {
                 SessionService sessionService = InitialContext.doLookup("java:global/erratum/SessionService");
-                principalInfo = sessionService.findSession(credentialCookie.getValue());
+                principal = sessionService.findSession(credentialCookie.getValue());
             }
         } catch (Exception e) {
             throw new LoginException(e.toString());
         }
-        return principalInfo != null;
+        return loginOk = principal != null;
     }
 
     @Override
     protected Principal getIdentity() {
-        return principalInfo.principal;
+        return principal;
     }
 
     @Override
     protected Group[] getRoleSets() throws LoginException {
         Group result = new SimpleGroup("Roles");
-        for (RolePrincipal role : principalInfo.roles) {
+        for (RolePrincipal role : principal.getRoles()) {
             result.addMember(role);
         }
         return new Group[]{result};

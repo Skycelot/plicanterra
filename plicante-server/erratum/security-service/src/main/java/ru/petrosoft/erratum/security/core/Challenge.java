@@ -5,24 +5,24 @@ import java.util.Date;
 /**
  *
  */
-public class Token {
+public class Challenge {
 
-    public String token;
+    public String nonce;
     public String login;
     public Date issued;
 
     @Override
     public int hashCode() {
-        return (this.token != null ? this.token.hashCode() : super.hashCode());
+        return (this.nonce != null ? this.nonce.hashCode() : super.hashCode());
     }
 
     @Override
     public boolean equals(Object obj) {
         boolean equality = false;
-        if (obj instanceof Token) {
-            final Token other = (Token) obj;
-            if (this.token != null) {
-                equality = this.token.equals(other.token);
+        if (obj instanceof Challenge) {
+            final Challenge other = (Challenge) obj;
+            if (this.nonce != null) {
+                equality = this.nonce.equals(other.nonce);
             } else {
                 equality = super.equals(obj);
             }
@@ -32,6 +32,6 @@ public class Token {
 
     @Override
     public String toString() {
-        return "Token{" + "token=" + token + ", login=" + login + ", issued=" + issued + '}';
+        return "Challenge{" + "nonce=" + nonce + ", login=" + login + ", issued=" + issued + '}';
     }
 }

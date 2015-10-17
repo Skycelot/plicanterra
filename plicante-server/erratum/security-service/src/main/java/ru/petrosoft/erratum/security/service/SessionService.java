@@ -1,20 +1,24 @@
 package ru.petrosoft.erratum.security.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
+import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
 import javax.ejb.EJB;
+import javax.ejb.EJBContext;
 import javax.ejb.Singleton;
+import javax.ejb.Startup;
 import ru.petrosoft.erratum.metamodel.Role;
 import ru.petrosoft.erratum.metamodel.User;
-import ru.petrosoft.erratum.security.core.ErratumPrincipal;
 import ru.petrosoft.erratum.security.core.LoginException;
-import ru.petrosoft.erratum.security.core.RolePrincipal;
-import ru.petrosoft.erratum.security.core.Token;
+import ru.petrosoft.erratum.security.core.Challenge;
+import ru.petrosoft.erratum.security.core.ClientSession;
+import ru.petrosoft.erratum.security.core.ErratumPrincipal;
 import ru.petrosoft.erratum.util.AesCipher;
 import ru.petrosoft.erratum.util.Argument;
 import ru.petrosoft.erratum.util.ArgumentsChecker;
@@ -23,56 +27,81 @@ import ru.petrosoft.erratum.util.ArgumentsChecker;
  *
  */
 @Singleton
+@Startup
 @EJB(name = "java:global/erratum/SessionService", beanInterface = SessionService.class)
 @PermitAll
 public class SessionService {
 
     @EJB
-    private SecurityService metamodel;
+    private UserService metamodel;
 
-    private final Map<String, Token> tokens = new HashMap<>();
-    private final Map<String, ErratumPrincipal> sessions = new HashMap<>();
+    @Resource
+    EJBContext ctx;
 
-    public String aquireToken(String login) {
+    private final Map<String, Challenge> challenges = new HashMap<>();
+    private final Map<String, ClientSession> sessions = new HashMap<>();
+
+    public String challenge(String login) {
         ArgumentsChecker.notNull(new Argument("login", login));
-        String random = UUID.randomUUID().toString();
+        String nonce = UUID.randomUUID().toString();
         if (metamodel.userExists(login)) {
-            Token token = new Token();
-            token.login = login;
-            token.token = random;
-            token.issued = new Date();
-            tokens.put(random, token);
+            Challenge challenge = new Challenge();
+            challenge.login = login;
+            challenge.nonce = nonce;
+            challenge.issued = new Date();
+            challenges.put(challenge.nonce, challenge);
         }
-        return random;
+        return nonce;
     }
 
-    public String startSession(String token, String encodedToken) throws LoginException {
-        ArgumentsChecker.notNull(new Argument("token", token), new Argument("encodedToken", encodedToken));
-        if (tokens.containsKey(token)) {
-            Token tokenEntity = tokens.remove(token);
+    public void startSession(String nonce, String response) throws LoginException {
+        ArgumentsChecker.notNull(new Argument("nonce", nonce), new Argument("response", response));
+        if (challenges.containsKey(nonce)) {
+            Challenge tokenEntity = challenges.remove(nonce);
             if (new Date().getTime() - tokenEntity.issued.getTime() < 100000) {
                 User user = metamodel.getUser(tokenEntity.login);
-                String referenceEncodedToken = AesCipher.cipher(token, user.password);
-                if (referenceEncodedToken.equals(encodedToken)) {
-                    ErratumPrincipal principal = new ErratumPrincipal(user.login);
-                    principal.setFullName(user.fullName);
-                    Set<RolePrincipal> roles = new HashSet<>(user.profile.roles.size());
+                String referenceEncodedToken = AesCipher.cipher(nonce, user.password);
+                if (referenceEncodedToken.equals(response)) {
+                    ClientSession session = new ClientSession();
+                    session.principal = new ErratumPrincipal(user.login);
+                    session.principal.setSessionId(nonce);
+                    session.roles = new ArrayList<>(user.profile.roles.size());
                     for (Role role : user.profile.roles) {
-                        roles.add(new RolePrincipal(role.code));
+                        session.roles.add(role.code);
                     }
-                    principal.setRoles(roles);
-                    sessions.put(token, principal);
-                    return token;
+                    sessions.put(session.principal.getSessionId(), session);
+                    return;
                 }
             }
         }
         throw new LoginException();
     }
 
-    public ErratumPrincipal findSession(String sessionId) {
-        ErratumPrincipal result = null;
+    public ClientSession findSession(String sessionId) {
+        ClientSession result = null;
         if (sessions.containsKey(sessionId)) {
             result = sessions.get(sessionId);
+        }
+        return result;
+    }
+
+    /**
+     * Возвращает список ролей, назначенных текущему пользователю.
+     *
+     * @return - список кодов ролей.
+     */
+    public List<String> getCurrentPrincipalRoles() {
+        List<String> result = Collections.emptyList();
+        if (ctx.getCallerPrincipal() instanceof ErratumPrincipal) {
+            ErratumPrincipal principal = (ErratumPrincipal) ctx.getCallerPrincipal();
+            if (sessions.containsKey(principal.getSessionId())) {
+                ClientSession session = sessions.get(principal.getSessionId());
+                if (session.roles != null && !session.roles.isEmpty()) {
+                    result = new ArrayList<>(session.roles);
+                }
+            }
+        } else {
+            throw new IllegalStateException("Caller principal isn't instance of class ErratumPrincipal!");
         }
         return result;
     }

@@ -11,6 +11,7 @@ import ru.petrosoft.erratum.crud.persist.Database;
 import ru.petrosoft.erratum.metamodel.service.MetamodelService;
 import ru.petrosoft.erratum.crud.transfer.Instance;
 import ru.petrosoft.erratum.crud.transfer.InstanceInitializer;
+import ru.petrosoft.erratum.crud.transfer.search.SearchFilter;
 import ru.petrosoft.erratum.crud.transfer.search.SearchResult;
 
 /**
@@ -72,7 +73,7 @@ public class CrudService {
         return result;
     }
 
-    public SearchResult searchInstances() {
+    public SearchResult searchInstances(SearchFilter filter) {
         SearchResult result = new SearchResult();
         result.number = 0;
         result.instances = Collections.emptyList();

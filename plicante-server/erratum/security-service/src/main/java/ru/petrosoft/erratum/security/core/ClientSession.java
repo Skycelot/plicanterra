@@ -1,10 +1,12 @@
 package ru.petrosoft.erratum.security.core;
 
+import java.util.List;
+
 /**
  *
  */
 public class ClientSession {
-    
-    public String id;
-    public Long userId;
+
+    public ErratumPrincipal principal;
+    public List<String> roles;
 }

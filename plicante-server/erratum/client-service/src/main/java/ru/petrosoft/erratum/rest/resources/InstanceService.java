@@ -1,6 +1,5 @@
 package ru.petrosoft.erratum.rest.resources;
 
-import java.util.Collections;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.ws.rs.Consumes;
@@ -14,7 +13,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import ru.petrosoft.erratum.crud.service.CrudService;
 import ru.petrosoft.erratum.crud.transfer.Instance;
-import ru.petrosoft.erratum.crud.transfer.Template;
 import ru.petrosoft.erratum.crud.transfer.search.SearchFilter;
 import ru.petrosoft.erratum.crud.transfer.search.SearchResult;
 import ru.petrosoft.erratum.rest.core.ErratumRestException;
@@ -35,9 +33,47 @@ public class InstanceService {
         }
     }
 
+    @POST
+    public Long createInstance(Instance instance) {
+        try {
+            return lookupCrudService().createInstance(instance);
+        } catch (Exception e) {
+            throw new ErratumRestException(e);
+        }
+    }
+
+    @PUT
+    public void updateInstance(Instance instance) {
+        try {
+            lookupCrudService().updateInstance(instance);
+        } catch (Exception e) {
+            throw new ErratumRestException(e);
+        }
+    }
+
+    @Path("{instanceId}")
     @GET
-    @Path("{templateId}")
-    public Instance getSkeleton(@PathParam("templateId") Long templateId) {
+    public Instance findInstance(@PathParam("instanceId") Long instanceId) {
+        try {
+            return lookupCrudService().findInstance(instanceId);
+        } catch (Exception e) {
+            throw new ErratumRestException(e);
+        }
+    }
+
+    @Path("{instanceId}")
+    @DELETE
+    public void removeInstance(@PathParam("instanceId") Long instanceId) {
+        try {
+            lookupCrudService().removeInstance(instanceId);
+        } catch (Exception e) {
+            throw new ErratumRestException(e);
+        }
+    }
+
+    @Path("template/{templateId}")
+    @GET
+    public Instance getSketchInstance(@PathParam("templateId") Long templateId) {
         try {
             return lookupCrudService().getSketchInstance(templateId);
         } catch (Exception e) {
@@ -45,37 +81,31 @@ public class InstanceService {
         }
     }
 
+    @Path("template/{templateId}")
     @POST
+    public Instance createInstance(@PathParam("templateId") Long templateId) {
+        try {
+            return lookupCrudService().createInstance(templateId);
+        } catch (Exception e) {
+            throw new ErratumRestException(e);
+        }
+    }
+
+    @Path("${instanceId}/status/${statusId}")
+    @PUT
+    public void changeInstanceStatus(@PathParam("instanceId") Long instanceId, @PathParam("statusId") Long statusId) {
+        try {
+            lookupCrudService().changeInstanceStatus(instanceId, statusId);
+        } catch (Exception e) {
+            throw new ErratumRestException(e);
+        }
+    }
+
+    @Path("search")
+    @PUT
     public SearchResult searchInstances(SearchFilter filter) {
         try {
-            SearchResult result = new SearchResult();
-            Instance instance = new Instance();
-            instance.template = new Template();
-            instance.template.id = filter.templateId;
-            instance.id = ((Number) filter.searchElements.get(0).values.get(0)).longValue();
-            instance.version = 7L;
-            result.number = 1;
-            result.instances = Collections.singletonList(instance);
-            return result;
-        } catch (Exception e) {
-            throw new ErratumRestException(e);
-        }
-    }
-
-    @PUT
-    public Long saveInstance(Instance instance) {
-        try {
-            return instance.id += 1;
-        } catch (Exception e) {
-            throw new ErratumRestException(e);
-        }
-    }
-
-    @DELETE
-    @Path("{instanceId}")
-    public void removeInstance(@PathParam("instanceId") Long instanceId) {
-        try {
-            instanceId += 1;
+            return lookupCrudService().searchInstances(filter);
         } catch (Exception e) {
             throw new ErratumRestException(e);
         }

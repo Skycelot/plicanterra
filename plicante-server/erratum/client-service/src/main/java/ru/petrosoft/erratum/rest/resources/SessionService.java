@@ -12,7 +12,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import ru.petrosoft.erratum.rest.core.ErratumRestException;
 import ru.petrosoft.erratum.security.core.LoginException;
@@ -33,20 +32,18 @@ public class SessionService {
     }
 
     @GET
-    public String aquireToken(@QueryParam("login") String login) {
+    public String challenge(@QueryParam("login") String login) {
         try {
-            return lookupSessionService().aquireToken(login);
+            return lookupSessionService().challenge(login);
         } catch (Exception e) {
             throw new ErratumRestException(e);
         }
     }
 
     @POST
-    public Response startSession(@FormParam("token") String token, @FormParam("encodedToken") String encodedToken) {
+    public void startSession(@FormParam("nonce") String nonce, @FormParam("response") String response) {
         try {
-            lookupSessionService().startSession(token, encodedToken);
-            NewCookie authCookie = new NewCookie("ErratumCredential", token);
-            return Response.ok().cookie(authCookie).build();
+            lookupSessionService().startSession(nonce, response);
         } catch (LoginException e) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).build());
         } catch (Exception e) {

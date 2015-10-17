@@ -23,7 +23,7 @@ import ru.petrosoft.erratum.metamodel.Role;
 import ru.petrosoft.erratum.metamodel.Status;
 import ru.petrosoft.erratum.metamodel.Template;
 import ru.petrosoft.erratum.metamodel.Transition;
-import ru.petrosoft.erratum.security.service.SecurityService;
+import ru.petrosoft.erratum.security.service.SessionService;
 import ru.petrosoft.newage.propertiesservice.ApplicationPropertiesBean;
 
 /**
@@ -45,10 +45,10 @@ public class MetamodelService {
     @Resource(lookup = "java:/jdbc/metamodel")
     DataSource metamodel;
 
-    @EJB(lookup = "java:global/erratum/SecurityService")
-    SecurityService security;
+    @EJB
+    SessionService security;
 
-    @EJB(lookup = "java:global/erratum/ApplicationPropertiesBean")
+    @EJB
     ApplicationPropertiesBean properties;
 
     @PostConstruct
@@ -95,7 +95,7 @@ public class MetamodelService {
                 Status status = statuses.get(statusId);
                 if (status != null && templateId.equals(status.template.id)) {
                     ru.petrosoft.erratum.metamodel.transfer.Template result = new ru.petrosoft.erratum.metamodel.transfer.Template(model);
-                    Set<String> roles = new HashSet<>(security.getCurrentUserRoles());
+                    Set<String> roles = new HashSet<>(security.getCurrentPrincipalRoles());
                     result.attributes = extractAttributes(model, status, roles);
                     result.links = extractLinks(model, status, roles);
                     result.status = new ru.petrosoft.erratum.metamodel.transfer.Status(status);

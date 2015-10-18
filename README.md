@@ -5,12 +5,6 @@ The system operates with definable objects. Every object consists of attributes 
 
 The system operates with two schemas: metadata schema (contains object definitions and restrictions) and data schema (contains actual object data).
 
-### Architecture
-* Metamodel module - loads object definitions, reflects metadata definitions on data schema.
-* CRUD module - persistence api for actual object data.
-* Security module - restricts data access based on role model.
-* Client web interface with REST api - user interface.
-
 ### Platform
 JRE 1.8, Java 7 EE application server, SQL server.<br/>
 Security login module implemeted only for Wildfly.<br/>

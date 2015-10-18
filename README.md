@@ -12,10 +12,11 @@ The system operates with two schemas: metadata schema (contains object definitio
 * Client web interface with REST api - user interface.
 
 ### Platform
-JRE 1.8, Java 7 EE application server, SQL server.
-Security login module implemeted only for wildfly.
-Database dialect implemented only for Postgres.
-Requires 2 datasources: metadata - jndi-name: "java:/jdbc/metamodel"
-data - jndi-name: "java:/jdbc/data
-Requires setting custom security realm with name "plicanterra-domain" with login module ru.petrosoft.erratum.security.login.WildflyLoginModule
-Requires application.properties file with setting its location as java property "property.file.path"
+JRE 1.8, Java 7 EE application server, SQL server.<br/>
+Security login module implemeted only for wildfly.<br/>
+Database dialect implemented only for Postgres.<br/>
+Requires 2 datasources:<br/>
+metadata: jndi-name - "java:/jdbc/metamodel"<br/>
+data: jndi-name - "java:/jdbc/data"<br/>
+Requires setting custom security realm with name "plicanterra-domain" with login module ru.petrosoft.erratum.security.login.WildflyLoginModule<br/>
+Requires application.properties file with setting its location as java property "property.file.path"<br/>

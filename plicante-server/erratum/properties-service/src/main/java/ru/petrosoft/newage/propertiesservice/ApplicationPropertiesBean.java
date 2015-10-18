@@ -37,4 +37,8 @@ public class ApplicationPropertiesBean {
     public String getApplicationCode() {
         return config.getString(PropertiesNames.APPLICATION_CODE);
     }
+    
+    public boolean isAuthenticationEngaged() {
+        return config.getBoolean(PropertiesNames.AUTHENTICATION_ENGAGED, true);
+    }
 }

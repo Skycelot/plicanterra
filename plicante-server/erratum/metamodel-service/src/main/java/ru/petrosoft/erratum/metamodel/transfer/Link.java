@@ -11,6 +11,7 @@ public class Link {
     public String name;
     public String desc;
     public LinkType type;
+    public Boolean exclusive;
     public Boolean editable;
 
     public Link(ru.petrosoft.erratum.metamodel.Link link) {
@@ -18,7 +19,5 @@ public class Link {
         code = link.code;
         name = link.name;
         desc = link.desc;
-        referencedTemplate = link.templateB.id;
-        type = LinkType.valueOf(link.type.name());
     }
 }

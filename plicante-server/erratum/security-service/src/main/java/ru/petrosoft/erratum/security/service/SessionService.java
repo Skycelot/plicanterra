@@ -22,6 +22,7 @@ import ru.petrosoft.erratum.security.core.ErratumPrincipal;
 import ru.petrosoft.erratum.util.AesCipher;
 import ru.petrosoft.erratum.util.Argument;
 import ru.petrosoft.erratum.util.ArgumentsChecker;
+import ru.petrosoft.newage.propertiesservice.ApplicationPropertiesBean;
 
 /**
  *
@@ -34,6 +35,9 @@ public class SessionService {
 
     @EJB
     private UserService metamodel;
+
+    @EJB
+    private ApplicationPropertiesBean properties;
 
     @Resource
     EJBContext ctx;
@@ -81,6 +85,16 @@ public class SessionService {
         ClientSession result = null;
         if (sessions.containsKey(sessionId)) {
             result = sessions.get(sessionId);
+        } else if (properties.isAuthenticationEngaged() && metamodel.userExists(sessionId)) {
+            User user = metamodel.getUser(sessionId);
+            result = new ClientSession();
+            result.principal = new ErratumPrincipal(sessionId);
+            result.principal.setSessionId(sessionId);
+            result.roles = new ArrayList<>(user.profile.roles.size());
+            for (Role role : user.profile.roles) {
+                result.roles.add(role.code);
+            }
+            sessions.put(result.principal.getSessionId(), result);
         }
         return result;
     }

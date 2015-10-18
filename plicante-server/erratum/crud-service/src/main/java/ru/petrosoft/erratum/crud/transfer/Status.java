@@ -10,6 +10,9 @@ public class Status {
     public String name;
     public String desc;
 
+    public Status() {
+    }
+
     public Status(ru.petrosoft.erratum.metamodel.transfer.Status status) {
         id = status.id;
         code = status.code;

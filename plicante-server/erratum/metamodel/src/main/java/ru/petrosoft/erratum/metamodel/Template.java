@@ -148,6 +148,15 @@ public class Template {
         }
     }
 
+    public Status findStatus(String code) {
+        Status result = statusGraph.findStatus(code);
+        if (result != null) {
+            return result;
+        } else {
+            throw new IllegalStateException("Template{id=" + id + "} doesn't have a Status{code= " + code + "}");
+        }
+    }
+
     @Override
     public int hashCode() {
         return (this.id != null ? this.id.hashCode() : super.hashCode());

@@ -74,6 +74,21 @@ public class Status {
         }
     }
 
+    public Status findStatus(String code) {
+        Status result = null;
+        if (code.equals(code)) {
+            result = this;
+        } else {
+            for (Transition transition : outcomes.values()) {
+                result = transition.outcome.findStatus(code);
+                if (result != null) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
     @Override
     public int hashCode() {
         return (this.id != null ? this.id.hashCode() : super.hashCode());

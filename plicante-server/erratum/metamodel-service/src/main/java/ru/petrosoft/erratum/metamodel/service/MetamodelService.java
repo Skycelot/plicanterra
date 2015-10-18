@@ -23,7 +23,10 @@ import ru.petrosoft.erratum.metamodel.Role;
 import ru.petrosoft.erratum.metamodel.Status;
 import ru.petrosoft.erratum.metamodel.Template;
 import ru.petrosoft.erratum.metamodel.Transition;
+import ru.petrosoft.erratum.metamodel.transfer.LinkType;
 import ru.petrosoft.erratum.security.service.SessionService;
+import ru.petrosoft.erratum.util.Argument;
+import ru.petrosoft.erratum.util.ArgumentsChecker;
 import ru.petrosoft.newage.propertiesservice.ApplicationPropertiesBean;
 
 /**
@@ -74,6 +77,47 @@ public class MetamodelService {
             Transition.loadRolePermissions(connection, project.id, transitions, roles);
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public ru.petrosoft.erratum.metamodel.transfer.Template getTemplate(String templateCode, Long statusId) {
+        if (project.templates.containsKey(templateCode)) {
+            Long templateId = project.templates.get(templateCode).id;
+            return getTemplate(templateId, statusId);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public ru.petrosoft.erratum.metamodel.transfer.Template getTemplate(Long templateId) {
+        return getTemplate(templateId, (Long) null);
+    }
+
+    public ru.petrosoft.erratum.metamodel.transfer.Template getTemplate(String templateCode) {
+        if (project.templates.containsKey(templateCode)) {
+            Long templateId = project.templates.get(templateCode).id;
+            return getTemplate(templateId, (Long) null);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public ru.petrosoft.erratum.metamodel.transfer.Template getTemplate(Long templateId, String statusCode) {
+        if (templates.containsKey(templateId)) {
+            Long statusId = templates.get(templateId).findStatus(statusCode).id;
+            return getTemplate(templateId, statusId);
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public ru.petrosoft.erratum.metamodel.transfer.Template getTemplate(String templateCode, String statusCode) {
+        if (project.templates.containsKey(templateCode)) {
+            Template template = project.templates.get(templateCode);
+            Long statusId = template.findStatus(statusCode).id;
+            return getTemplate(template.id, statusId);
+        } else {
+            throw new IllegalArgumentException();
         }
     }
 
@@ -141,6 +185,24 @@ public class MetamodelService {
                 Map<String, Status> visibleIn = link.templateA.equals(model) ? link.visibleAsAIn : link.visibleAsBIn;
                 if (visibleIn.containsKey(status.code)) {
                     ru.petrosoft.erratum.metamodel.transfer.Link resultLink = new ru.petrosoft.erratum.metamodel.transfer.Link(link);
+                    resultLink.referencedTemplate = link.templateA.equals(model) ? link.templateA.id : link.templateB.id;
+                    switch (link.type) {
+                        case ONE_TO_ONE:
+                            resultLink.exclusive = true;
+                            resultLink.type = link.templateA.equals(model) ? LinkType.HOLDER : LinkType.REFERENCED;
+                        case ONE_TO_MANY:
+                            resultLink.exclusive = false;
+                            resultLink.type = link.templateA.equals(model) ? LinkType.REFERENCED : LinkType.HOLDER;
+                            break;
+                        case MANY_TO_ONE:
+                            resultLink.exclusive = false;
+                            resultLink.type = link.templateA.equals(model) ? LinkType.HOLDER : LinkType.REFERENCED;
+                            break;
+                        case MANY_TO_MANY:
+                            resultLink.exclusive = false;
+                            resultLink.type = LinkType.JOIN_TABLE;
+                            break;
+                    }
                     rolePermissions = new HashSet<>(link.editableFor.keySet());
                     rolePermissions.retainAll(roles);
                     resultLink.editable = false;
@@ -173,5 +235,15 @@ public class MetamodelService {
             result = Collections.emptyMap();
         }
         return result;
+    }
+
+    public String getAttributeCodeById(Long attributeId) {
+        ArgumentsChecker.notNull(new Argument("attributeId", attributeId));
+        return attributes.get(attributeId).code;
+    }
+
+    public String getLinkCodeById(Long linkId) {
+        ArgumentsChecker.notNull(new Argument("linkId", linkId));
+        return links.get(linkId).code;
     }
 }

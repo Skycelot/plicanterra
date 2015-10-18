@@ -13,7 +13,7 @@ The system operates with two schemas: metadata schema (contains object definitio
 
 ### Platform
 JRE 1.8, Java 7 EE application server, SQL server.<br/>
-Security login module implemeted only for wildfly.<br/>
+Security login module implemeted only for Wildfly.<br/>
 Database dialect implemented only for Postgres.<br/>
 Requires 2 datasources:<br/>
 metadata: jndi-name - "java:/jdbc/metamodel"<br/>

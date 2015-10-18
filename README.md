@@ -10,3 +10,12 @@ The system operates with two schemas: metadata schema (contains object definitio
 * CRUD module - persistence api for actual object data.
 * Security module - restricts data access based on role model.
 * Client web interface with REST api - user interface.
+
+### Platform
+JRE 1.8, Java 7 EE application server, SQL server.
+Security login module implemeted only for wildfly.
+Database dialect implemented only for Postgres.
+Requires 2 datasources: metadata - jndi-name: "java:/jdbc/metamodel"
+data - jndi-name: "java:/jdbc/data
+Requires setting custom security realm with name "plicanterra-domain" with login module ru.petrosoft.erratum.security.login.WildflyLoginModule
+Requires application.properties file with setting its location as java property "property.file.path"

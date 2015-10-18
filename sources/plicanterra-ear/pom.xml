@@ -67,6 +67,12 @@
                             <context-root>/erratum</context-root>
                         </webModule>
                     </modules>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>

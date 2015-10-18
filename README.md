@@ -1,4 +1,4 @@
-# Ojbect management system.
+# Object management system.
 
 ### Description
 The system operates with definable objects. Every object consists of attributes set and statuses. Objects can be linked together. Status can apply restrictions on attributes. There is a security mechanism of roles, that restrict object, attribute manipulations and status changes.

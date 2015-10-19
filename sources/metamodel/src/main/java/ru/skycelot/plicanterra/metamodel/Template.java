@@ -30,16 +30,16 @@ public class Template {
 
     public static Map<Long, Template> loadTemplates(Connection connection, Project project) {
         ArgumentsChecker.notNull(new Argument("connection", connection), new Argument("project", project));
-        Map<Long, Template> result = null;
         String templatesQuery = "select t.ID, t.CODE, t.NAME, t.DESCRIPTION from TEMPLATE t where t.PROJECT_ID = ?";
         try (PreparedStatement statement = connection.prepareStatement(templatesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
             statement.setLong(1, project.id);
             ResultSet resultSet = statement.executeQuery();
+            Map<Long, Template> result;
             boolean notEmpty = resultSet.last();
             if (notEmpty) {
                 int count = resultSet.getRow();
                 resultSet.beforeFirst();
-                result = new HashMap<>(count * 2);
+                result = new HashMap<>((int) (count / 0.75) + 100);
                 while (resultSet.next()) {
                     Template template = new Template();
                     template.id = resultSet.getLong("ID");
@@ -52,10 +52,10 @@ public class Template {
             } else {
                 result = new HashMap<>();
             }
+            return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return result;
     }
 
     public static void loadRolePermissions(Connection connection, Long projectId, Map<Long, Template> templates, Map<Long, Role> roles) {

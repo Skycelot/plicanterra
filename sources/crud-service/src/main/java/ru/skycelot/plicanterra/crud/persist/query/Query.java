@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package ru.skycelot.plicanterra.crud.service.query;
+package ru.skycelot.plicanterra.crud.persist.query;
 
 /**
  *

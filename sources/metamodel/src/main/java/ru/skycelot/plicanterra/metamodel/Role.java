@@ -28,7 +28,7 @@ public class Role {
             if (notEmpty) {
                 int count = resultSet.getRow();
                 resultSet.beforeFirst();
-                result = new HashMap<>(count * 2);
+                result = new HashMap<>((int) (count / 0.75) + 100);
                 while (resultSet.next()) {
                     Role role = new Role();
                     role.id = resultSet.getLong("ID");

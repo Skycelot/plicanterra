@@ -70,10 +70,10 @@ public class Database implements Closeable {
         }
     }
 
-    public void insert(InsertQuery query) {
+    public void execute(Query query) {
         try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
             int orderNumber = 1;
-            for (String parameter : query.parameters) {
+            for (String parameter : query.getParameters()) {
                 statement.setString(orderNumber, parameter);
                 orderNumber++;
             }

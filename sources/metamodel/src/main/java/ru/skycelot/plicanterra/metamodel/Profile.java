@@ -22,16 +22,16 @@ public class Profile {
     public Set<Role> roles;
 
     public static Map<Long, Profile> loadProfiles(Connection connection, Project project, Map<Long, User> users) {
-        Map<Long, Profile> result = null;
         String templatesQuery = "select p.ID, p.PRINCIPAL_ID from PROFILE p where p.PROJECT_ID = ?";
         try (PreparedStatement statement = connection.prepareStatement(templatesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
             statement.setLong(1, project.id);
             ResultSet resultSet = statement.executeQuery();
+            Map<Long, Profile> result;
             boolean notEmpty = resultSet.last();
             if (notEmpty) {
                 int count = resultSet.getRow();
                 resultSet.beforeFirst();
-                result = new HashMap<>(count * 2);
+                result = new HashMap<>((int) (count / 0.75) + 100);
                 while (resultSet.next()) {
                     Profile profile = new Profile();
                     profile.id = resultSet.getLong("ID");
@@ -47,10 +47,10 @@ public class Profile {
             } else {
                 result = new HashMap<>();
             }
+            return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return result;
     }
 
     public static void loadUserRoles(Connection connection, Long projectId, Map<Long, Profile> profiles, Map<Long, Role> roles) {

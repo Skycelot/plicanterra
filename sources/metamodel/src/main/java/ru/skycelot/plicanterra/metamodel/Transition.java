@@ -26,23 +26,31 @@ public class Transition {
             statement.setLong(1, projectId);
             statement.setLong(2, projectId);
             ResultSet resultSet = statement.executeQuery();
-            Map<Long, Transition> result = new HashMap<>();
-            while (resultSet.next()) {
-                Transition transition = new Transition();
-                transition.id = resultSet.getLong("ID");
-                long sourceStatusId = resultSet.getLong("SOURCE_STATUS_ID");
-                if (statuses.containsKey(sourceStatusId)) {
-                    transition.original = statuses.get(sourceStatusId);
-                    long destinationStatusId = resultSet.getLong("DESTINATION_STATUS_ID");
-                    if (statuses.containsKey(destinationStatusId)) {
-                        transition.outcome = statuses.get(destinationStatusId);
-                        result.put(transition.id, transition);
+            Map<Long, Transition> result;
+            boolean notEmpty = resultSet.last();
+            if (notEmpty) {
+                int count = resultSet.getRow();
+                resultSet.beforeFirst();
+                result = new HashMap<>((int) (count / 0.75) + 100);
+                while (resultSet.next()) {
+                    Transition transition = new Transition();
+                    transition.id = resultSet.getLong("ID");
+                    long sourceStatusId = resultSet.getLong("SOURCE_STATUS_ID");
+                    if (statuses.containsKey(sourceStatusId)) {
+                        transition.original = statuses.get(sourceStatusId);
+                        long destinationStatusId = resultSet.getLong("DESTINATION_STATUS_ID");
+                        if (statuses.containsKey(destinationStatusId)) {
+                            transition.outcome = statuses.get(destinationStatusId);
+                            result.put(transition.id, transition);
+                        } else {
+                            throw new IllegalStateException("Transition{id=" + transition.id + "}'s destination Status{id=" + destinationStatusId + "} is not loaded!");
+                        }
                     } else {
-                        throw new IllegalStateException("Transition{id=" + transition.id + "}'s destination Status{id=" + destinationStatusId + "} is not loaded!");
+                        throw new IllegalStateException("Transition{id=" + transition.id + "}'s source Status{id=" + sourceStatusId + "} is not loaded!");
                     }
-                } else {
-                    throw new IllegalStateException("Transition{id=" + transition.id + "}'s source Status{id=" + sourceStatusId + "} is not loaded!");
                 }
+            } else {
+                result = new HashMap<>();
             }
             return result;
         } catch (SQLException e) {

@@ -24,16 +24,16 @@ public class Attribute {
     public Map<String, Status> editableIn;
 
     public static Map<Long, Attribute> loadAttributes(Connection connection, Long projectId, Map<Long, Template> templates) {
-        Map<Long, Attribute> result = null;
         String attributesQuery = "select a.ID, a.TEMPLATE_ID, a.CODE, a.NAME, a.DESCRIPTION, ty.CODE as TYPE_CODE from ATTRIBUTE a inner join TEMPLATE t on a.TEMPLATE_ID = t.ID left join ATTRIBUTE_TYPE ty on a.ATTRIBUTE_TYPE_ID = ty.ID where t.PROJECT_ID = ?";
         try (PreparedStatement statement = connection.prepareStatement(attributesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
             statement.setLong(1, projectId);
             ResultSet resultSet = statement.executeQuery();
+            Map<Long, Attribute> result;
             boolean notEmpty = resultSet.last();
             if (notEmpty) {
                 int count = resultSet.getRow();
                 resultSet.beforeFirst();
-                result = new HashMap<>(count * 2);
+                result = new HashMap<>((int) (count / 0.75) + 100);
                 while (resultSet.next()) {
                     Attribute attribute = new Attribute();
                     attribute.id = resultSet.getLong("ID");
@@ -57,10 +57,10 @@ public class Attribute {
             } else {
                 result = new HashMap<>();
             }
+            return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return result;
     }
 
     public static void loadStatusPermissions(Connection connection, Long projectId, Map<Long, Attribute> attributes, Map<Long, Status> statuses) {

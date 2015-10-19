@@ -1,20 +1,21 @@
 package ru.skycelot.plicanterra.crud.persist;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
  *
  */
-public class InsertQuery extends Query {
+public class UpdateQuery extends Query {
 
     private final String tableName;
+    private final Long rowPk;
     private final List<String> columns = new LinkedList<>();
     private final List<String> values = new LinkedList<>();
 
-    public InsertQuery(String tableName) {
+    public UpdateQuery(String tableName, Long rowPk) {
         this.tableName = tableName.toUpperCase();
+        this.rowPk = rowPk;
     }
 
     public void addInlineColumn(String columnName, Object value) {
@@ -31,26 +32,20 @@ public class InsertQuery extends Query {
     @Override
     public String toString() {
         StringBuilder queryBody = new StringBuilder();
-        queryBody.append("insert into ");
+        queryBody.append("update ");
         queryBody.append(tableName);
-        queryBody.append(" (");
-        Iterator<String> columnsIterator = columns.iterator();
-        while (columnsIterator.hasNext()) {
-            queryBody.append(columnsIterator.next());
-            if (columnsIterator.hasNext()) {
+        queryBody.append(" set ");
+        int counter = 0;
+        while (counter < columns.size()) {
+            queryBody.append(columns.get(counter));
+            queryBody.append("=");
+            queryBody.append(values.get(counter));
+            if (counter < columns.size() - 1) {
                 queryBody.append(", ");
             }
         }
-        queryBody.append(") ");
-        queryBody.append("values (");
-        Iterator<String> valuesIterator = values.iterator();
-        while (valuesIterator.hasNext()) {
-            queryBody.append(valuesIterator.next());
-            if (valuesIterator.hasNext()) {
-                queryBody.append(", ");
-            }
-        }
-        queryBody.append(")");
+        queryBody.append(" where ID=");
+        queryBody.append(rowPk);
         return queryBody.toString();
     }
 }

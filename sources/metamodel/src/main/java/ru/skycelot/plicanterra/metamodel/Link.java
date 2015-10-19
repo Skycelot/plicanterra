@@ -29,17 +29,17 @@ public class Link {
     public Map<String, Status> editableAsBIn;
 
     public static Map<Long, Link> loadLinks(Connection connection, Long projectId, Map<Long, Template> templates) {
-        Map<Long, Link> result = null;
         String linksQuery = "select l.ID, l.TEMPLATE_1_ID, l.TEMPLATE_2_ID, l.CODE, l.NAME, l.DESCRIPTION, ty.CODE as TYPE_CODE from LINK l inner join TEMPLATE t1 on l.TEMPLATE_1_ID = t1.ID inner join TEMPLATE t2 on l.TEMPLATE_2_ID = t2.ID inner join LINK_TYPE ty on l.LINK_TYPE_ID = ty.ID where t1.PROJECT_ID = ? and t2.PROJECT_ID = ?";
         try (PreparedStatement statement = connection.prepareStatement(linksQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
             statement.setLong(1, projectId);
             statement.setLong(2, projectId);
             ResultSet resultSet = statement.executeQuery();
+            Map<Long, Link> result;
             boolean notEmpty = resultSet.last();
             if (notEmpty) {
                 int count = resultSet.getRow();
                 resultSet.beforeFirst();
-                result = new HashMap<>(count * 2);
+                result = new HashMap<>((int) (count / 0.75) + 100);
                 Set<String> linkCodes = new HashSet<>(count * 2);
                 while (resultSet.next()) {
                     Link link = new Link();
@@ -74,10 +74,10 @@ public class Link {
             } else {
                 result = new HashMap<>();
             }
+            return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return result;
     }
 
     public static void loadStatusPermissions(Connection connection, Long projectId, Map<Long, Link> links, Map<Long, Status> statuses) {

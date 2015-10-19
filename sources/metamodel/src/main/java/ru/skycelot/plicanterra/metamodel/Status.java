@@ -24,16 +24,16 @@ public class Status {
 
     public static Map<Long, Status> loadStatuses(Connection connection, Long projectId, Map<Long, Template> templates) {
         ArgumentsChecker.notNull(new Argument("connection", connection), new Argument("projectId", projectId));
-        Map<Long, Status> result = null;
         String statusesQuery = "select s.ID, s.TEMPLATE_ID, s.CODE, s.NAME, s.DESCRIPTION, ss.CODE as STAGE_CODE from STATUS s left join STATUS_STAGE ss on s.STATUS_STAGE_ID = ss.ID inner join TEMPLATE t on s.TEMPLATE_ID = t.ID where t.PROJECT_ID = ?";
         try (PreparedStatement statement = connection.prepareStatement(statusesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);) {
             statement.setLong(1, projectId);
             ResultSet resultSet = statement.executeQuery();
+            Map<Long, Status> result;
             boolean notEmpty = resultSet.last();
             if (notEmpty) {
                 int count = resultSet.getRow();
                 resultSet.beforeFirst();
-                result = new HashMap<>(count * 2);
+                result = new HashMap<>((int) (count / 0.75) + 100);
                 while (resultSet.next()) {
                     Status status = new Status();
                     status.id = resultSet.getLong("ID");
@@ -57,10 +57,10 @@ public class Status {
             } else {
                 result = new HashMap<>();
             }
+            return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return result;
     }
 
     public static void gatherStatusesOutcomes(Map<Long, Transition> transitions) {

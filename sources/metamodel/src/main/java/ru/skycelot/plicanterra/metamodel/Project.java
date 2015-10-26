@@ -1,67 +1,87 @@
 package ru.skycelot.plicanterra.metamodel;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
-import ru.skycelot.plicanterra.util.Argument;
-import ru.skycelot.plicanterra.util.ArgumentsChecker;
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.MapKey;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 
 /**
  *
  */
+@Table(name = "project")
 public class Project {
 
-    public Long id;
-    public String code;
-    public String name;
-    public String description;
-    public Map<String, Template> templates;
-    public Map<String, Role> roles;
+    @Id
+    @Column(name = "id")
+    private Long id;
+    @Column(name = "code")
+    private String code;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "description")
+    private String description;
+    @OneToMany(mappedBy = "project")
+    @MapKey(name = "code")
+    private Map<String, Template> templates;
+    @OneToMany(mappedBy = "project")
+    @MapKey(name = "code")
+    private Map<String, Role> roles;
 
-    public static Project loadProject(Connection connection, String projectCode) {
-        ArgumentsChecker.notNull(new Argument("connection", connection), new Argument("projectCode", projectCode));
-        String templatesQuery = "select p.ID, p.NAME, p.DESCRIPTION from PROJECT p where p.CODE = ?";
-        try (PreparedStatement statement = connection.prepareStatement(templatesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            statement.setString(1, projectCode);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                Project result = new Project();
-                result.id = resultSet.getLong("ID");
-                result.code = projectCode;
-                result.name = resultSet.getString("NAME");
-                result.description = resultSet.getString("DESCRIPTION");
-                return result;
-            } else {
-                throw new IllegalArgumentException("There is no project{code=" + projectCode + "}");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Project() {
     }
 
-    public void gatherProjectTemplates(Map<Long, Template> templates) {
-        ArgumentsChecker.notNull(new Argument("templates", templates));
-        this.templates = templates.isEmpty() ? new HashMap<>() : new HashMap<>(templates.size() * 2);
-        for (Template template : templates.values()) {
-            if (this.templates.containsKey(template.code)) {
-                throw new IllegalStateException("Duplicate templates with the code {" + template.code + "}!");
-            }
-            this.templates.put(template.code, template);
-        }
+    public Project(Long id) {
+        this.id = id;
     }
 
-    public void gatherProjectRoles(Map<Long, Role> roles) {
-        ArgumentsChecker.notNull(new Argument("roles", roles));
-        this.roles = roles.isEmpty() ? new HashMap<>() : new HashMap<>(roles.size() * 2);
-        for (Role role : roles.values()) {
-            if (this.roles.containsKey(role.code)) {
-                throw new IllegalStateException("Duplicate roles with the code {" + role.code + "}!");
-            }
-            this.roles.put(role.code, role);
-        }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Map<String, Template> getTemplates() {
+        return templates;
+    }
+
+    public void setTemplates(Map<String, Template> templates) {
+        this.templates = templates;
+    }
+
+    public Map<String, Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Map<String, Role> roles) {
+        this.roles = roles;
     }
 
     @Override

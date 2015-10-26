@@ -1,55 +1,75 @@
 package ru.skycelot.plicanterra.metamodel;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import ru.skycelot.plicanterra.util.orm.Filter;
 
 /**
  *
  */
+@Table(name = "principal")
 public class User {
 
-    public Long id;
-    public String login;
-    public String fullName;
-    public String password;
-    public Profile profile;
+    @Id
+    @Column(name = "id")
+    private Long id;
+    @Column(name = "login")
+    private String login;
+    @Column(name = "full_name")
+    private String fullName;
+    @Column(name = "password")
+    private String password;
+    @OneToMany(mappedBy = "user")
+    @Filter(field = "project_id", contextual = true)
+    private Profile profile;
 
-    public static Map<Long, User> loadUsers(Connection connection, Long projectId) {
-        String templatesQuery = "select p.ID, p.LOGIN, p.FULL_NAME, p.PASSWORD from PRINCIPAL p inner join PROFILE pr on p.ID = pr.PRINCIPAL_ID where pr.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(templatesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            statement.setLong(1, projectId);
-            ResultSet resultSet = statement.executeQuery();
-            Map<Long, User> result;
-            boolean notEmpty = resultSet.last();
-            if (notEmpty) {
-                int count = resultSet.getRow();
-                resultSet.beforeFirst();
-                result = new HashMap<>((int) (count / 0.75) + 100);
-                while (resultSet.next()) {
-                    User user = new User();
-                    user.id = resultSet.getLong("ID");
-                    user.login = resultSet.getString("LOGIN");
-                    user.fullName = resultSet.getString("FULL_NAME");
-                    user.password = resultSet.getString("PASSWORD");
-                    result.put(user.id, user);
-                }
-            } else {
-                result = new HashMap<>();
-            }
-            return result;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public User() {
     }
 
-    public static void gatherUserProfiles(Map<Long, Profile> profiles) {
-        for (Profile profile : profiles.values()) {
-            profile.user.profile = profile;
-        }
+    public User(Long id) {
+        this.id = id;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getLogin() {
+        return login;
+    }
+
+    public void setLogin(String login) {
+        this.login = login;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Profile getProfile() {
+        return profile;
+    }
+
+    public void setProfile(Profile profile) {
+        this.profile = profile;
     }
 
     @Override

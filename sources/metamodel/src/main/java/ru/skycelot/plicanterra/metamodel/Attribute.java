@@ -1,120 +1,125 @@
 package ru.skycelot.plicanterra.metamodel;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapKey;
+import javax.persistence.Table;
+import ru.skycelot.plicanterra.util.orm.JoinTableColumn;
 
 /**
  *
  */
+@Table(name = "attribute")
 public class Attribute {
 
-    public Long id;
-    public Template template;
-    public String code;
-    public String name;
-    public String desc;
-    public AttributeType type;
-    public Map<String, Role> visibleFor;
-    public Map<String, Status> visibleIn;
-    public Map<String, Role> editableFor;
-    public Map<String, Status> editableIn;
+    @Id
+    @Column(name = "id")
+    private Long id;
+    @ManyToOne
+    @JoinColumn(name = "template_id")
+    private Template template;
+    @Column(name = "code")
+    private String code;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "description")
+    private String description;
+    @Column(name = "type")
+    @Enumerated(EnumType.STRING)
+    private AttributeType type;
+    @ManyToMany(targetEntity = Status.class)
+    @MapKey(name = "code")
+    @JoinTable(name = "attribute_grants",
+            joinColumns = @JoinColumn(name = "attribute_id"),
+            inverseJoinColumns = @JoinColumn(name = "status_id"))
+    @JoinTableColumn(name = "permission")
+    @Enumerated(EnumType.STRING)
+    private Map<String, ElementPermission> statusPermissions;
+    @ManyToMany(targetEntity = Role.class)
+    @MapKey(name = "code")
+    @JoinTable(name = "attribute_permissions",
+            joinColumns = @JoinColumn(name = "attribute_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @JoinTableColumn(name = "permission")
+    @Enumerated(EnumType.STRING)
+    private Map<String, ElementPermission> rolePermissions;
 
-    public static Map<Long, Attribute> loadAttributes(Connection connection, Long projectId, Map<Long, Template> templates) {
-        String attributesQuery = "select a.ID, a.TEMPLATE_ID, a.CODE, a.NAME, a.DESCRIPTION, ty.CODE as TYPE_CODE from ATTRIBUTE a inner join TEMPLATE t on a.TEMPLATE_ID = t.ID left join ATTRIBUTE_TYPE ty on a.ATTRIBUTE_TYPE_ID = ty.ID where t.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(attributesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            statement.setLong(1, projectId);
-            ResultSet resultSet = statement.executeQuery();
-            Map<Long, Attribute> result;
-            boolean notEmpty = resultSet.last();
-            if (notEmpty) {
-                int count = resultSet.getRow();
-                resultSet.beforeFirst();
-                result = new HashMap<>((int) (count / 0.75) + 100);
-                while (resultSet.next()) {
-                    Attribute attribute = new Attribute();
-                    attribute.id = resultSet.getLong("ID");
-                    long templateId = resultSet.getLong("TEMPLATE_ID");
-                    if (templates.containsKey(templateId)) {
-                        attribute.template = templates.get(templateId);
-                        attribute.code = resultSet.getString("CODE");
-                        attribute.name = resultSet.getString("NAME");
-                        attribute.desc = resultSet.getString("DESCRIPTION");
-                        String typeCode = resultSet.getString("TYPE_CODE");
-                        if (typeCode != null) {
-                            attribute.type = AttributeType.valueOf(typeCode);
-                            result.put(attribute.id, attribute);
-                        } else {
-                            throw new IllegalStateException("Attribute{id=" + attribute.id + "}'s type doesn't have code!");
-                        }
-                    } else {
-                        throw new IllegalStateException("Attribute{id=" + attribute.id + "}'s template isn't loaded!");
-                    }
-                }
-            } else {
-                result = new HashMap<>();
-            }
-            return result;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Attribute() {
     }
 
-    public static void loadStatusPermissions(Connection connection, Long projectId, Map<Long, Attribute> attributes, Map<Long, Status> statuses) {
-        String attributesQuery = "select distinct ac.ATTRIBUTE_ID, ac.STATUS_ID, p.CODE from ATTRIBUTE_GRANTS ac inner join STATUS s on ac.STATUS_ID = s.ID left join PERMISSION p on ac.PERMISSION_ID = p.ID inner join TEMPLATE t on s.TEMPLATE_ID = t.ID where t.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(attributesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            statement.setLong(1, projectId);
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                Attribute attribute = attributes.get(resultSet.getLong("ATTRIBUTE_ID"));
-                Status status = statuses.get(resultSet.getLong("STATUS_ID"));
-                AttributePermission type = AttributePermission.valueOf(resultSet.getString("CODE"));
-                switch (type) {
-                    case WRITE:
-                        if (attribute.editableIn == null) {
-                            attribute.editableIn = new HashMap<>();
-                        }
-                        attribute.editableIn.put(status.code, status);
-                    case READ:
-                        if (attribute.visibleIn == null) {
-                            attribute.visibleIn = new HashMap<>();
-                        }
-                        attribute.visibleIn.put(status.code, status);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Attribute(Long id) {
+        this.id = id;
     }
 
-    public static void loadRolePermissions(Connection connection, Long projectId, Map<Long, Attribute> attributes, Map<Long, Role> roles) {
-        String attributesQuery = "select distinct ac.ATTRIBUTE_ID, ac.ROLE_ID, p.CODE from ATTRIBUTE_PERMISSIONS ac inner join PERMISSION p on ac.PERMISSION_ID = p.ID inner join ATTRIBUTE a on ac.ATTRIBUTE_ID = a.ID inner join TEMPLATE t on a.TEMPLATE_ID = t.ID where t.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(attributesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            statement.setLong(1, projectId);
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                Attribute attribute = attributes.get(resultSet.getLong("ATTRIBUTE_ID"));
-                Role role = roles.get(resultSet.getLong("ROLE_ID"));
-                AttributePermission type = AttributePermission.valueOf(resultSet.getString("CODE"));
-                switch (type) {
-                    case WRITE:
-                        if (attribute.editableFor == null) {
-                            attribute.editableFor = new HashMap<>();
-                        }
-                        attribute.editableFor.put(role.code, role);
-                    case READ:
-                        if (attribute.visibleFor == null) {
-                            attribute.visibleFor = new HashMap<>();
-                        }
-                        attribute.visibleFor.put(role.code, role);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Template getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(Template template) {
+        this.template = template;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String desc) {
+        this.description = desc;
+    }
+
+    public AttributeType getType() {
+        return type;
+    }
+
+    public void setType(AttributeType type) {
+        this.type = type;
+    }
+
+    public Map<String, ElementPermission> getStatusPermissions() {
+        return statusPermissions;
+    }
+
+    public void setStatusPermissions(Map<String, ElementPermission> statusPermissions) {
+        this.statusPermissions = statusPermissions;
+    }
+
+    public Map<String, ElementPermission> getRolePermissions() {
+        return rolePermissions;
+    }
+
+    public void setRolePermissions(Map<String, ElementPermission> rolePermissions) {
+        this.rolePermissions = rolePermissions;
     }
 
     @Override
@@ -138,6 +143,6 @@ public class Attribute {
 
     @Override
     public String toString() {
-        return "Attribute{" + "code=" + code + '}' + " of template{" + "code=" + template.code + "}";
+        return "Attribute{" + "code=" + code + ", template=" + template + '}';
     }
 }

@@ -1,50 +1,75 @@
 package ru.skycelot.plicanterra.metamodel;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 /**
  *
  */
+@Table(name = "role")
 public class Role {
 
-    public Long id;
-    public String code;
-    public String name;
-    public String desc;
-    public Project project;
+    @Id
+    @Column(name = "id")
+    private Long id;
+    @Column(name = "code")
+    private String code;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "description")
+    private String description;
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
 
-    public static Map<Long, Role> loadRoles(Connection connection, Project project) {
-        Map<Long, Role> result = null;
-        String rolesQuery = "select r.ID, r.CODE, r.NAME, r.DESCRIPTION from ROLE r where r.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(rolesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            statement.setLong(1, project.id);
-            ResultSet resultSet = statement.executeQuery();
-            boolean notEmpty = resultSet.last();
-            if (notEmpty) {
-                int count = resultSet.getRow();
-                resultSet.beforeFirst();
-                result = new HashMap<>((int) (count / 0.75) + 100);
-                while (resultSet.next()) {
-                    Role role = new Role();
-                    role.id = resultSet.getLong("ID");
-                    role.code = resultSet.getString("CODE");
-                    role.name = resultSet.getString("NAME");
-                    role.desc = resultSet.getString("DESCRIPTION");
-                    role.project = project;
-                    result.put(role.id, role);
-                }
-            } else {
-                result = new HashMap<>();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return result;
+    public Role() {
+    }
+
+    public Role(Long id) {
+        this.id = id;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
     }
 
     @Override

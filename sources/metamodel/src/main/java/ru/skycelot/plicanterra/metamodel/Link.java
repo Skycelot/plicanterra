@@ -1,153 +1,136 @@
 package ru.skycelot.plicanterra.metamodel;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapKey;
+import javax.persistence.Table;
+import ru.skycelot.plicanterra.util.orm.JoinTableColumn;
 
 /**
  *
  */
+@Table(name = "link")
 public class Link {
 
-    public Long id;
-    public Template templateA;
-    public Template templateB;
-    public String code;
-    public String name;
-    public String desc;
-    public LinkType type;
-    public Map<String, Role> visibleFor;
-    public Map<String, Status> visibleAsAIn;
-    public Map<String, Status> visibleAsBIn;
-    public Map<String, Role> editableFor;
-    public Map<String, Status> editableAsAIn;
-    public Map<String, Status> editableAsBIn;
+    @Id
+    @Column(name = "id")
+    private Long id;
+    @ManyToOne
+    @JoinColumn(name = "template_left_id")
+    private Template leftTemplate;
+    @ManyToOne
+    @JoinColumn(name = "template_right_id")
+    private Template rightTemplate;
+    @Column(name = "code")
+    private String code;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "description")
+    private String description;
+    @Column(name = "type")
+    @Enumerated(EnumType.STRING)
+    private LinkType type;
+    @ManyToMany(targetEntity = Status.class)
+    @MapKey(name = "code")
+    @JoinTable(name = "link_grants",
+            joinColumns = @JoinColumn(name = "link_id"),
+            inverseJoinColumns = @JoinColumn(name = "status_id"))
+    @JoinTableColumn(name = "permission")
+    @Enumerated(EnumType.STRING)
+    private Map<String, ElementPermission> statusPermissions;
+    @ManyToMany(targetEntity = Role.class)
+    @MapKey(name = "code")
+    @JoinTable(name = "link_permissions",
+            joinColumns = @JoinColumn(name = "link_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @JoinTableColumn(name = "permission")
+    @Enumerated(EnumType.STRING)
+    private Map<String, ElementPermission> rolePermissions;
 
-    public static Map<Long, Link> loadLinks(Connection connection, Long projectId, Map<Long, Template> templates) {
-        String linksQuery = "select l.ID, l.TEMPLATE_1_ID, l.TEMPLATE_2_ID, l.CODE, l.NAME, l.DESCRIPTION, ty.CODE as TYPE_CODE from LINK l inner join TEMPLATE t1 on l.TEMPLATE_1_ID = t1.ID inner join TEMPLATE t2 on l.TEMPLATE_2_ID = t2.ID inner join LINK_TYPE ty on l.LINK_TYPE_ID = ty.ID where t1.PROJECT_ID = ? and t2.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(linksQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            statement.setLong(1, projectId);
-            statement.setLong(2, projectId);
-            ResultSet resultSet = statement.executeQuery();
-            Map<Long, Link> result;
-            boolean notEmpty = resultSet.last();
-            if (notEmpty) {
-                int count = resultSet.getRow();
-                resultSet.beforeFirst();
-                result = new HashMap<>((int) (count / 0.75) + 100);
-                Set<String> linkCodes = new HashSet<>(count * 2);
-                while (resultSet.next()) {
-                    Link link = new Link();
-                    link.id = resultSet.getLong("ID");
-                    long templateLeftId = resultSet.getLong("TEMPLATE_1_ID");
-                    if (templates.containsKey(templateLeftId)) {
-                        link.templateA = templates.get(templateLeftId);
-                        long templateRightId = resultSet.getLong("TEMPLATE_2_ID");
-                        if (templates.containsKey(templateRightId)) {
-                            link.templateB = templates.get(templateRightId);
-                            link.code = resultSet.getString("CODE");
-                            if (linkCodes.contains(link.code)) {
-                                throw new IllegalStateException("Duplicate links with the code {" + link.code + "}");
-                            }
-                            linkCodes.add(link.code);
-                            link.name = resultSet.getString("NAME");
-                            link.desc = resultSet.getString("DESCRIPTION");
-                            String typeCode = resultSet.getString("TYPE_CODE");
-                            if (typeCode != null) {
-                                link.type = LinkType.valueOf(typeCode);
-                                result.put(link.id, link);
-                            } else {
-                                throw new IllegalStateException("Link{id=" + link.id + "}'s type has no code!");
-                            }
-                        } else {
-                            throw new IllegalStateException("Link{id=" + link.id + "}'s right template isn't loaded!");
-                        }
-                    } else {
-                        throw new IllegalStateException("Link{id=" + link.id + "}'s left template isn't loaded!");
-                    }
-                }
-            } else {
-                result = new HashMap<>();
-            }
-            return result;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Link() {
     }
 
-    public static void loadStatusPermissions(Connection connection, Long projectId, Map<Long, Link> links, Map<Long, Status> statuses) {
-        String linksQuery = "select distinct lc.LINK_ID, lc.STATUS_ID, p.CODE from LINK_GRANTS lc inner join PERMISSION P on lc.PERMISSION_ID = p.ID inner join STATUS s on lc.STATUS_ID = s.ID inner join TEMPLATE t on s.TEMPLATE_ID = t.ID where t.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(linksQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);) {
-            statement.setLong(1, projectId);
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                Link link = links.get(resultSet.getLong("LINK_ID"));
-                Status status = statuses.get(resultSet.getLong("STATUS_ID"));
-                AttributePermission type = AttributePermission.valueOf(resultSet.getString("CODE"));
-                Map<String, Status> permissionMapForEdit = null;
-                Map<String, Status> permissionMapForView = null;
-                if (status.template.equals(link.templateA)) {
-                    if (link.editableAsAIn == null) {
-                        link.editableAsAIn = new HashMap<>();
-                    }
-                    if (link.visibleAsAIn == null) {
-                        link.visibleAsAIn = new HashMap<>();
-                    }
-                    permissionMapForEdit = link.editableAsAIn;
-                    permissionMapForView = link.visibleAsAIn;
-                } else {
-                    if (link.editableAsBIn == null) {
-                        link.editableAsBIn = new HashMap<>();
-                    }
-                    if (link.visibleAsBIn == null) {
-                        link.visibleAsBIn = new HashMap<>();
-                    }
-                    permissionMapForEdit = link.editableAsBIn;
-                    permissionMapForView = link.visibleAsBIn;
-                }
-                switch (type) {
-                    case WRITE:
-                        permissionMapForEdit.put(status.code, status);
-                    case READ:
-                        permissionMapForView.put(status.code, status);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Link(Long id) {
+        this.id = id;
     }
 
-    public static void loadRolePermissions(Connection connection, Long projectId, Map<Long, Link> links, Map<Long, Role> roles) {
-        String linksQuery = "select distinct lc.LINK_ID, lc.ROLE_ID, p.CODE from LINK_PERMISSIONS lc inner join PERMISSION p on lc.PERMISSION_ID = p.ID inner join LINK l on lc.LINK_ID = l.ID inner join TEMPLATE tA on l.TEMPLATE_1_ID = tA.ID inner join TEMPLATE tB on l.TEMPLATE_2_ID = tB.ID where tA.PROJECT_ID = ? and tB.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(linksQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);) {
-            statement.setLong(1, projectId);
-            statement.setLong(2, projectId);
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                Link link = links.get(resultSet.getLong("LINK_ID"));
-                Role role = roles.get(resultSet.getLong("ROLE_ID"));
-                AttributePermission type = AttributePermission.valueOf(resultSet.getString("CODE"));
-                switch (type) {
-                    case WRITE:
-                        if (link.editableFor == null) {
-                            link.editableFor = new HashMap<>();
-                        }
-                        link.editableFor.put(role.code, role);
-                    case READ:
-                        if (link.visibleFor == null) {
-                            link.visibleFor = new HashMap<>();
-                        }
-                        link.visibleFor.put(role.code, role);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Template getLeftTemplate() {
+        return leftTemplate;
+    }
+
+    public void setLeftTemplate(Template leftTemplate) {
+        this.leftTemplate = leftTemplate;
+    }
+
+    public Template getRightTemplate() {
+        return rightTemplate;
+    }
+
+    public void setRightTemplate(Template rightTemplate) {
+        this.rightTemplate = rightTemplate;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public LinkType getType() {
+        return type;
+    }
+
+    public void setType(LinkType type) {
+        this.type = type;
+    }
+
+    public Map<String, ElementPermission> getStatusPermissions() {
+        return statusPermissions;
+    }
+
+    public void setStatusPermissions(Map<String, ElementPermission> statusPermissions) {
+        this.statusPermissions = statusPermissions;
+    }
+
+    public Map<String, ElementPermission> getRolePermissions() {
+        return rolePermissions;
+    }
+
+    public void setRolePermissions(Map<String, ElementPermission> rolePermissions) {
+        this.rolePermissions = rolePermissions;
     }
 
     @Override
@@ -171,6 +154,6 @@ public class Link {
 
     @Override
     public String toString() {
-        return "Link{" + "code=" + code + '}' + " of templates{" + "codeA=" + templateA.code + ",codeB=" + templateB.code + "}";
+        return "Link{" + "code=" + code + ", leftTemplate=" + leftTemplate + ", rightTemplate=" + rightTemplate + '}';
     }
 }

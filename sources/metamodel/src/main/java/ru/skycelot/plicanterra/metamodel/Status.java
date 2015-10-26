@@ -1,92 +1,99 @@
 package ru.skycelot.plicanterra.metamodel;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
-import ru.skycelot.plicanterra.util.Argument;
-import ru.skycelot.plicanterra.util.ArgumentsChecker;
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import ru.skycelot.plicanterra.util.orm.ForeignMapKey;
 
 /**
  *
  */
+@Table(name = "status")
 public class Status {
 
-    public Long id;
-    public Template template;
-    public String code;
-    public String name;
-    public String desc;
-    public StatusStage lifecyclePhase;
-    public Map<String, Transition> outcomes;
+    @Id
+    @Column(name = "id")
+    private Long id;
+    @ManyToOne
+    @JoinColumn(name = "template_id")
+    private Template template;
+    @Column(name = "code")
+    private String code;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "description")
+    private String description;
+    @Column(name = "initial")
+    private Boolean initial;
+    @OneToMany(mappedBy = "sourceStatus")
+    @ForeignMapKey(mappedBy = "destinationStatus", name = "code")
+    private Map<String, Transition> outcomes;
 
-    public static Map<Long, Status> loadStatuses(Connection connection, Long projectId, Map<Long, Template> templates) {
-        ArgumentsChecker.notNull(new Argument("connection", connection), new Argument("projectId", projectId));
-        String statusesQuery = "select s.ID, s.TEMPLATE_ID, s.CODE, s.NAME, s.DESCRIPTION, ss.CODE as STAGE_CODE from STATUS s left join STATUS_STAGE ss on s.STATUS_STAGE_ID = ss.ID inner join TEMPLATE t on s.TEMPLATE_ID = t.ID where t.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(statusesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);) {
-            statement.setLong(1, projectId);
-            ResultSet resultSet = statement.executeQuery();
-            Map<Long, Status> result;
-            boolean notEmpty = resultSet.last();
-            if (notEmpty) {
-                int count = resultSet.getRow();
-                resultSet.beforeFirst();
-                result = new HashMap<>((int) (count / 0.75) + 100);
-                while (resultSet.next()) {
-                    Status status = new Status();
-                    status.id = resultSet.getLong("ID");
-                    long templateId = resultSet.getLong("TEMPLATE_ID");
-                    if (templates.containsKey(templateId)) {
-                        status.template = templates.get(templateId);
-                        status.code = resultSet.getString("CODE");
-                        status.name = resultSet.getString("NAME");
-                        status.desc = resultSet.getString("DESCRIPTION");
-                        String stageCode = resultSet.getString("STAGE_CODE");
-                        if (stageCode != null) {
-                            status.lifecyclePhase = StatusStage.valueOf(stageCode);
-                            result.put(status.id, status);
-                        } else {
-                            throw new IllegalStateException("Status{id=" + status.id + "}'s type doesn't have code!");
-                        }
-                    } else {
-                        throw new IllegalArgumentException("Status{id=" + status.id + "}'s template isn't loaded!");
-                    }
-                }
-            } else {
-                result = new HashMap<>();
-            }
-            return result;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Status() {
     }
 
-    public static void gatherStatusesOutcomes(Map<Long, Transition> transitions) {
-        for (Transition transition : transitions.values()) {
-            Status srcStatus = transition.original;
-            Status destStatus = transition.outcome;
-            if (srcStatus.outcomes == null) {
-                srcStatus.outcomes = new HashMap<>();
-            }
-            srcStatus.outcomes.put(destStatus.code, transition);
-        }
+    public Status(Long id) {
+        this.id = id;
     }
 
-    public Status findStatus(String code) {
-        Status result = null;
-        if (code.equals(code)) {
-            result = this;
-        } else {
-            for (Transition transition : outcomes.values()) {
-                result = transition.outcome.findStatus(code);
-                if (result != null) {
-                    break;
-                }
-            }
-        }
-        return result;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Template getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(Template template) {
+        this.template = template;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Boolean getInitial() {
+        return initial;
+    }
+
+    public void setInitial(Boolean initial) {
+        this.initial = initial;
+    }
+
+    public Map<String, Transition> getOutcomes() {
+        return outcomes;
+    }
+
+    public void setOutcomes(Map<String, Transition> outcomes) {
+        this.outcomes = outcomes;
     }
 
     @Override
@@ -110,6 +117,6 @@ public class Status {
 
     @Override
     public String toString() {
-        return "Status{" + "code=" + code + '}' + " of template{" + "code=" + template.code + "}";
+        return "Status{" + "code=" + code + ", template=" + template + '}';
     }
 }

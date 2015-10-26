@@ -1,85 +1,74 @@
 package ru.skycelot.plicanterra.metamodel;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import ru.skycelot.plicanterra.util.Argument;
-import ru.skycelot.plicanterra.util.ArgumentsChecker;
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapKey;
+import javax.persistence.Table;
 
 /**
  *
  */
+@Table(name = "profile")
 public class Profile {
 
-    public Long id;
-    public User user;
-    public Project project;
-    public Set<Role> roles;
+    @Id
+    @Column(name = "id")
+    private Long id;
+    @ManyToOne
+    @JoinColumn(name = "principal_id")
+    private User user;
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
+    @ManyToMany
+    @MapKey(name = "code")
+    @JoinTable(name = "principal_roles",
+            joinColumns = @JoinColumn(name = "profile_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Map<String, Role> roles;
 
-    public static Map<Long, Profile> loadProfiles(Connection connection, Project project, Map<Long, User> users) {
-        String templatesQuery = "select p.ID, p.PRINCIPAL_ID from PROFILE p where p.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(templatesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            statement.setLong(1, project.id);
-            ResultSet resultSet = statement.executeQuery();
-            Map<Long, Profile> result;
-            boolean notEmpty = resultSet.last();
-            if (notEmpty) {
-                int count = resultSet.getRow();
-                resultSet.beforeFirst();
-                result = new HashMap<>((int) (count / 0.75) + 100);
-                while (resultSet.next()) {
-                    Profile profile = new Profile();
-                    profile.id = resultSet.getLong("ID");
-                    long userId = resultSet.getLong("PRINCIPAL_ID");
-                    if (users.containsKey(userId)) {
-                        profile.user = users.get(userId);
-                        profile.project = project;
-                        result.put(profile.id, profile);
-                    } else {
-                        throw new IllegalStateException("There is no user{id=" + userId + "}");
-                    }
-                }
-            } else {
-                result = new HashMap<>();
-            }
-            return result;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Profile() {
     }
 
-    public static void loadUserRoles(Connection connection, Long projectId, Map<Long, Profile> profiles, Map<Long, Role> roles) {
-        ArgumentsChecker.notNull(new Argument("connection", connection), new Argument("projectId", projectId));
-        String userRolesQuery = "select pr.PROFILE_ID, pr.ROLE_ID from PRINCIPAL_ROLES pr inner join PROFILE p on pr.PROFILE_ID = p.ID where p.PROJECT_ID = ?";
-        try (PreparedStatement statement = connection.prepareStatement(userRolesQuery, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            statement.setLong(1, projectId);
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                long profileId = resultSet.getLong("PROFILE_ID");
-                if (profiles.containsKey(profileId)) {
-                    Profile profile = profiles.get(profileId);
-                    long roleId = resultSet.getLong("ROLE_ID");
-                    if (roles.containsKey(roleId)) {
-                        Role role = roles.get(roleId);
-                        if (profile.roles == null) {
-                            profile.roles = new HashSet<>();
-                        }
-                        profile.roles.add(role);
-                    } else {
-                        throw new IllegalStateException("");
-                    }
-                } else {
-                    throw new IllegalStateException("");
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public Profile(Long id) {
+        this.id = id;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
+    }
+
+    public Map<String, Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Map<String, Role> roles) {
+        this.roles = roles;
     }
 
     @Override
@@ -103,6 +92,6 @@ public class Profile {
 
     @Override
     public String toString() {
-        return "Profile{" + "id=" + id + ", user=" + user + ", project=" + project + '}';
+        return "Profile{" + "user=" + user + ", project=" + project + '}';
     }
 }

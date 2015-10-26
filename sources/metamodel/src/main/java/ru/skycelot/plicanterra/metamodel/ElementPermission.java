@@ -3,7 +3,7 @@ package ru.skycelot.plicanterra.metamodel;
 /**
  *
  */
-public enum AttributePermission {
+public enum ElementPermission {
 
     READ, WRITE
 }

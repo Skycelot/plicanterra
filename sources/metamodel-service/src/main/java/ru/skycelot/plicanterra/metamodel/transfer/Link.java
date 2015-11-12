@@ -18,6 +18,6 @@ public class Link {
         id = link.id;
         code = link.code;
         name = link.name;
-        desc = link.desc;
+        desc = link.description;
     }
 }

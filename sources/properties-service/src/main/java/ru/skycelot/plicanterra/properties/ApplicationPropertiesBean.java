@@ -17,15 +17,16 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 @EJB(name = "java:global/erratum/ApplicationPropertiesBean", beanInterface = ApplicationPropertiesBean.class)
 @PermitAll
 public class ApplicationPropertiesBean {
-
+    
     private Configuration config;
-
+    
     @PostConstruct
     public void init() {
         try {
             String configFilePath = System.getProperty(PropertiesNames.PROPERTY_FILE_PATH);
             if (configFilePath != null) {
                 config = new PropertiesConfiguration(configFilePath);
+                ((PropertiesConfiguration) config).setThrowExceptionOnMissing(true);
             } else {
                 throw new IllegalArgumentException(PropertiesNames.PROPERTY_FILE_PATH + " property is not set!");
             }
@@ -33,7 +34,7 @@ public class ApplicationPropertiesBean {
             throw new RuntimeException(e);
         }
     }
-
+    
     public String getApplicationCode() {
         return config.getString(PropertiesNames.APPLICATION_CODE);
     }

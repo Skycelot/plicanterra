@@ -22,6 +22,11 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>metamodel-persistence</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>properties-service</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -29,6 +34,10 @@
             <groupId>javax</groupId>
             <artifactId>javaee-api</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jdbi</groupId>
+            <artifactId>jdbi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

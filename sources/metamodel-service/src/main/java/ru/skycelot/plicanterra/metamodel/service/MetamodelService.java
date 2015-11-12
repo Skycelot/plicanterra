@@ -1,25 +1,22 @@
 package ru.skycelot.plicanterra.metamodel.service;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
 import javax.ejb.EJB;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
-import javax.sql.DataSource;
+import ru.skycelot.metamodel.service.MetamodelCrud;
 import ru.skycelot.plicanterra.metamodel.Attribute;
+import ru.skycelot.plicanterra.metamodel.ElementPermission;
 import ru.skycelot.plicanterra.metamodel.Link;
 import ru.skycelot.plicanterra.metamodel.Project;
-import ru.skycelot.plicanterra.metamodel.Role;
 import ru.skycelot.plicanterra.metamodel.Status;
 import ru.skycelot.plicanterra.metamodel.Template;
 import ru.skycelot.plicanterra.metamodel.Transition;
@@ -45,8 +42,8 @@ public class MetamodelService {
     Map<Long, Link> links;
     Map<Long, Status> statuses;
 
-    @Resource(lookup = "java:/jdbc/metamodel")
-    DataSource metamodel;
+    @EJB
+    MetamodelCrud crud;
 
     @EJB
     SessionService security;
@@ -56,28 +53,8 @@ public class MetamodelService {
 
     @PostConstruct
     public void init() {
-        try (Connection connection = metamodel.getConnection()) {
-            project = Project.loadProject(connection, properties.getApplicationCode());
-            templates = Template.loadTemplates(connection, project);
-            project.gatherProjectTemplates(templates);
-            attributes = Attribute.loadAttributes(connection, project.id, templates);
-            Template.gatherTemplatesAttributes(attributes);
-            links = Link.loadLinks(connection, project.id, templates);
-            Template.gatherTemplatesLinks(links);
-            statuses = Status.loadStatuses(connection, project.id, templates);
-            Map<Long, Transition> transitions = Transition.loadTransitions(connection, project.id, statuses);
-            Status.gatherStatusesOutcomes(transitions);
-            Template.gatherTemplatesStatusGraphs(templates, statuses);
-            Map<Long, Role> roles = Role.loadRoles(connection, project);
-            project.gatherProjectRoles(roles);
-            Attribute.loadStatusPermissions(connection, project.id, attributes, statuses);
-            Attribute.loadRolePermissions(connection, project.id, attributes, roles);
-            Link.loadStatusPermissions(connection, project.id, links, statuses);
-            Link.loadRolePermissions(connection, project.id, links, roles);
-            Transition.loadRolePermissions(connection, project.id, transitions, roles);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        String applicationCode = properties.getApplicationCode();
+        crud.loadProject(applicationCode);
     }
 
     public ru.skycelot.plicanterra.metamodel.transfer.Template getTemplate(String templateCode, Long statusId) {
@@ -104,7 +81,7 @@ public class MetamodelService {
 
     public ru.skycelot.plicanterra.metamodel.transfer.Template getTemplate(Long templateId, String statusCode) {
         if (templates.containsKey(templateId)) {
-            Long statusId = templates.get(templateId).findStatus(statusCode).id;
+            Long statusId = templates.get(templateId).statuses.get(statusCode).id;
             return getTemplate(templateId, statusId);
         } else {
             throw new IllegalArgumentException();
@@ -114,7 +91,7 @@ public class MetamodelService {
     public ru.skycelot.plicanterra.metamodel.transfer.Template getTemplate(String templateCode, String statusCode) {
         if (project.templates.containsKey(templateCode)) {
             Template template = project.templates.get(templateCode);
-            Long statusId = template.findStatus(statusCode).id;
+            Long statusId = template.statuses.get(statusCode).id;
             return getTemplate(template.id, statusId);
         } else {
             throw new IllegalArgumentException();
@@ -134,7 +111,7 @@ public class MetamodelService {
             Template model = templates.get(templateId);
             if (model != null) {
                 if (statusId == null) {
-                    statusId = model.statusGraph.id;
+                    statusId = model.initialStatus.id;
                 }
                 Status status = statuses.get(statusId);
                 if (status != null && templateId.equals(status.template.id)) {
@@ -159,18 +136,18 @@ public class MetamodelService {
     private Map<String, ru.skycelot.plicanterra.metamodel.transfer.Attribute> extractAttributes(Template model, Status status, Set<String> roles) {
         Map<String, ru.skycelot.plicanterra.metamodel.transfer.Attribute> result = new HashMap<>(model.attributes.size() * 2);
         for (Attribute attribute : model.attributes.values()) {
-            Set<String> rolePermissions = new HashSet<>(attribute.visibleFor.keySet());
+            Set<String> rolePermissions = new HashSet<>(attribute.rolePermissions.keySet());
             rolePermissions.retainAll(roles);
-            if (!rolePermissions.isEmpty() && attribute.visibleIn.containsKey(status.code)) {
+            if (!rolePermissions.isEmpty() && attribute.statusPermissions.containsKey(status.code)) {
                 ru.skycelot.plicanterra.metamodel.transfer.Attribute resultAttribute = new ru.skycelot.plicanterra.metamodel.transfer.Attribute(attribute);
-                rolePermissions = new HashSet<>(attribute.editableFor.keySet());
-                rolePermissions.retainAll(roles);
-                if (!rolePermissions.isEmpty() && attribute.editableIn.containsKey(status.code)) {
-                    resultAttribute.editable = true;
-                } else {
-                    resultAttribute.editable = false;
+                for (String rolePermission : rolePermissions) {
+                    if (attribute.rolePermissions.get(rolePermission) == ElementPermission.WRITE
+                            && attribute.statusPermissions.get(status.code) == ElementPermission.WRITE) {
+                        resultAttribute.editable = true;
+                        break;
+                    }
+                    result.put(resultAttribute.code, resultAttribute);
                 }
-                result.put(resultAttribute.code, resultAttribute);
             }
         }
         return result;
@@ -179,37 +156,37 @@ public class MetamodelService {
     private Map<String, ru.skycelot.plicanterra.metamodel.transfer.Link> extractLinks(Template model, Status status, Set<String> roles) {
         Map<String, ru.skycelot.plicanterra.metamodel.transfer.Link> result = new HashMap<>(model.links.size() * 2);
         for (Link link : model.links.values()) {
-            Set<String> rolePermissions = new HashSet<>(link.visibleFor.keySet());
+            Set<String> rolePermissions = new HashSet<>(link.rolePermissions.keySet());
             rolePermissions.retainAll(roles);
             if (!rolePermissions.isEmpty()) {
-                Map<String, Status> visibleIn = link.templateA.equals(model) ? link.visibleAsAIn : link.visibleAsBIn;
-                if (visibleIn.containsKey(status.code)) {
+                boolean leftSide = link.leftTemplate.equals(model);
+                if (leftSide ? link.leftStatusPermissions.containsKey(status.code) : link.rightStatusPermissions.containsKey(status.code)) {
                     ru.skycelot.plicanterra.metamodel.transfer.Link resultLink = new ru.skycelot.plicanterra.metamodel.transfer.Link(link);
-                    resultLink.referencedTemplate = link.templateA.equals(model) ? link.templateA.id : link.templateB.id;
+                    resultLink.referencedTemplate = leftSide ? link.leftTemplate.id : link.rightTemplate.id;
                     switch (link.type) {
                         case ONE_TO_ONE:
                             resultLink.exclusive = true;
-                            resultLink.type = link.templateA.equals(model) ? LinkType.HOLDER : LinkType.REFERENCED;
+                            resultLink.type = leftSide ? LinkType.HOLDER : LinkType.REFERENCED;
                         case ONE_TO_MANY:
                             resultLink.exclusive = false;
-                            resultLink.type = link.templateA.equals(model) ? LinkType.REFERENCED : LinkType.HOLDER;
+                            resultLink.type = leftSide ? LinkType.REFERENCED : LinkType.HOLDER;
                             break;
                         case MANY_TO_ONE:
                             resultLink.exclusive = false;
-                            resultLink.type = link.templateA.equals(model) ? LinkType.HOLDER : LinkType.REFERENCED;
+                            resultLink.type = leftSide ? LinkType.HOLDER : LinkType.REFERENCED;
                             break;
                         case MANY_TO_MANY:
                             resultLink.exclusive = false;
                             resultLink.type = LinkType.JOIN_TABLE;
                             break;
                     }
-                    rolePermissions = new HashSet<>(link.editableFor.keySet());
-                    rolePermissions.retainAll(roles);
-                    resultLink.editable = false;
-                    if (!rolePermissions.isEmpty()) {
-                        Map<String, Status> editableIn = link.templateA.equals(model) ? link.editableAsAIn : link.editableAsBIn;
-                        if (editableIn.containsKey(status.code)) {
+                    for (String rolePermission : rolePermissions) {
+                        if (link.rolePermissions.get(rolePermission) == ElementPermission.WRITE
+                                && leftSide
+                                        ? link.leftStatusPermissions.get(status.code) == ElementPermission.WRITE
+                                        : link.rightStatusPermissions.get(status.code) == ElementPermission.WRITE) {
                             resultLink.editable = true;
+                            break;
                         }
                     }
                     result.put(resultLink.code, resultLink);
@@ -224,10 +201,11 @@ public class MetamodelService {
         if (status.outcomes != null && !status.outcomes.isEmpty()) {
             result = new HashMap<>(status.outcomes.size() * 2);
             for (Transition transition : status.outcomes.values()) {
-                Set<String> rolePermissions = new HashSet<>(transition.allowedFor.keySet());
+                Set<String> rolePermissions = new HashSet<>(transition.rolePermissions.keySet());
                 rolePermissions.retainAll(roles);
                 if (!rolePermissions.isEmpty()) {
-                    ru.skycelot.plicanterra.metamodel.transfer.Status availableStatus = new ru.skycelot.plicanterra.metamodel.transfer.Status(transition.outcome);
+                    ru.skycelot.plicanterra.metamodel.transfer.Status availableStatus
+                            = new ru.skycelot.plicanterra.metamodel.transfer.Status(transition.destinationStatus);
                     result.put(availableStatus.code, availableStatus);
                 }
             }

@@ -13,7 +13,6 @@ import javax.ejb.EJB;
 import javax.ejb.EJBContext;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
-import ru.skycelot.plicanterra.metamodel.Role;
 import ru.skycelot.plicanterra.metamodel.User;
 import ru.skycelot.plicanterra.security.core.LoginException;
 import ru.skycelot.plicanterra.security.core.Challenge;
@@ -69,10 +68,7 @@ public class SessionService {
                     ClientSession session = new ClientSession();
                     session.principal = new ErratumPrincipal(user.login);
                     session.principal.setSessionId(nonce);
-                    session.roles = new ArrayList<>(user.profile.roles.size());
-                    for (Role role : user.profile.roles) {
-                        session.roles.add(role.code);
-                    }
+                    session.roles = new ArrayList<>(user.profile.roles.keySet());
                     sessions.put(session.principal.getSessionId(), session);
                     return;
                 }
@@ -90,10 +86,7 @@ public class SessionService {
             result = new ClientSession();
             result.principal = new ErratumPrincipal(sessionId);
             result.principal.setSessionId(sessionId);
-            result.roles = new ArrayList<>(user.profile.roles.size());
-            for (Role role : user.profile.roles) {
-                result.roles.add(role.code);
-            }
+            result.roles = new ArrayList<>(user.profile.roles.keySet());
             sessions.put(result.principal.getSessionId(), result);
         }
         return result;

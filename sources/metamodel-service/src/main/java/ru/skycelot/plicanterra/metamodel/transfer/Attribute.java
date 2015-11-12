@@ -16,7 +16,7 @@ public class Attribute {
         id = attribute.id;
         code = attribute.code;
         name = attribute.name;
-        desc = attribute.desc;
+        desc = attribute.description;
         type = AttributeType.valueOf(attribute.type.name());
     }
 }

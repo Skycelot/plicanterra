@@ -14,7 +14,8 @@ public class Link {
     public String name;
     public String description;
     public LinkType type;
-    public Map<String, ElementPermission> statusPermissions;
+    public Map<String, ElementPermission> leftStatusPermissions;
+    public Map<String, ElementPermission> rightStatusPermissions;
     public Map<String, ElementPermission> rolePermissions;
 
     @Override

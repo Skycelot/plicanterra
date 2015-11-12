@@ -14,6 +14,6 @@ public class Status {
         id = status.id;
         code = status.code;
         name = status.name;
-        desc = status.desc;
+        desc = status.description;
     }
 }

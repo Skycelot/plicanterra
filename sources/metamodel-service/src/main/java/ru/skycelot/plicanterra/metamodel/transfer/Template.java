@@ -23,6 +23,6 @@ public class Template {
         this.id = model.id;
         this.code = model.code;
         this.name = model.name;
-        this.desc = model.desc;
+        this.desc = model.description;
     }
 }

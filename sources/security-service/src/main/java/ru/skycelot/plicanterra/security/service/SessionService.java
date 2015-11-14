@@ -27,7 +27,7 @@ import ru.skycelot.plicanterra.properties.ApplicationPropertiesBean;
  *
  */
 @Singleton
-@Startup
+//@Startup
 @EJB(name = "java:global/erratum/SessionService", beanInterface = SessionService.class)
 @PermitAll
 public class SessionService {

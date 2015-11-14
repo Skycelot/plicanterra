@@ -17,6 +17,12 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>metamodel-persistence</artifactId>
+            <version>${project.version}</version>
+            <type>ejb</type>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>metamodel-service</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>

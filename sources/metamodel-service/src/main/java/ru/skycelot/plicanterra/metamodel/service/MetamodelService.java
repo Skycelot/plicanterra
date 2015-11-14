@@ -17,6 +17,7 @@ import ru.skycelot.plicanterra.metamodel.Attribute;
 import ru.skycelot.plicanterra.metamodel.ElementPermission;
 import ru.skycelot.plicanterra.metamodel.Link;
 import ru.skycelot.plicanterra.metamodel.Project;
+import ru.skycelot.plicanterra.metamodel.Role;
 import ru.skycelot.plicanterra.metamodel.Status;
 import ru.skycelot.plicanterra.metamodel.Template;
 import ru.skycelot.plicanterra.metamodel.Transition;
@@ -30,7 +31,7 @@ import ru.skycelot.plicanterra.properties.ApplicationPropertiesBean;
  *
  */
 @Singleton
-@Startup
+//@Startup
 @Lock(LockType.READ)
 @EJB(name = "java:global/erratum/MetamodelService", beanInterface = MetamodelService.class)
 @PermitAll
@@ -41,6 +42,7 @@ public class MetamodelService {
     Map<Long, Attribute> attributes;
     Map<Long, Link> links;
     Map<Long, Status> statuses;
+    Map<Long, Role> roles;
 
     @EJB
     MetamodelCrud crud;
@@ -54,7 +56,13 @@ public class MetamodelService {
     @PostConstruct
     public void init() {
         String applicationCode = properties.getApplicationCode();
-        crud.loadProject(applicationCode);
+        project = crud.loadProject(applicationCode);
+        templates = crud.loadTemplates(project);
+        attributes = crud.loadAttributes(project.id, templates);
+        links = crud.loadLinks(project.id, templates);
+        statuses = crud.loadStatuses(project.id, templates);
+        roles = crud.loadProjectRoles(project);
+        crud.assembleProject(project, roles, templates, attributes, links, statuses);
     }
 
     public ru.skycelot.plicanterra.metamodel.transfer.Template getTemplate(String templateCode, Long statusId) {

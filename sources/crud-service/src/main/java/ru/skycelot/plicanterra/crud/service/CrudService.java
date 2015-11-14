@@ -32,7 +32,7 @@ import ru.skycelot.plicanterra.util.ArgumentsChecker;
 @PermitAll
 public class CrudService {
 
-    @EJB(lookup = "java:global/erratum/MetamodelService")
+    @EJB
     MetamodelService metamodel;
 
     @Resource(lookup = "java:/jdbc/data")

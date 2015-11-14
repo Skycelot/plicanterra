@@ -1,199 +1,149 @@
-﻿create table PROJECT (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  constraint PROJECT_PK primary key (ID)
+﻿CREATE TABLE project (
+  id BIGINT NOT NULL,
+  code VARCHAR (50),
+  name VARCHAR (150),
+  description VARCHAR (2000),
+  CONSTRAINT project_pk PRIMARY KEY (id)
 );
 
-create table PRINCIPAL (
-  ID bigint not null,
-  LOGIN varchar (50),
-  FULL_NAME varchar (250),
-  PASSWORD varchar (50),
-  constraint PRINCIPAL_PK primary key (ID)
+CREATE TABLE principal (
+  id BIGINT NOT NULL,
+  login VARCHAR (50),
+  full_name VARCHAR (250),
+  password VARCHAR (50),
+  CONSTRAINT principal_pk PRIMARY KEY (id)
 );
 
-create table TEMPLATE (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  PROJECT_ID bigint,
-  constraint TEMPLATE_PK primary key (ID),
-  constraint TEMPLATE_PROJECT_FK foreign key (PROJECT_ID) references PROJECT (ID)
+CREATE TABLE template (
+  id BIGINT NOT NULL,
+  code VARCHAR (50),
+  name VARCHAR (150),
+  description VARCHAR (2000),
+  project_id BIGINT,
+  CONSTRAINT template_pk PRIMARY KEY (id),
+  CONSTRAINT template_project_fk FOREIGN KEY (project_id) REFERENCES project (id)
 );
 
-create table ROLE (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  PROJECT_ID bigint,
-  constraint ROLE_PK primary key (ID),
-  constraint ROLE_PROJECT_FK foreign key (PROJECT_ID) references PROJECT (ID)
+CREATE TABLE role (
+  id BIGINT NOT NULL,
+  code VARCHAR (50),
+  name VARCHAR (150),
+  description VARCHAR (2000),
+  project_id BIGINT,
+  CONSTRAINT role_pk PRIMARY KEY (id),
+  CONSTRAINT role_project_fk FOREIGN KEY (project_id) REFERENCES project (id)
 );
 
-create table ATTRIBUTE_TYPE (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  constraint ATTRIBUTE_TYPE_PK primary key (ID)
+CREATE TABLE attribute (
+  id BIGINT NOT NULL,
+  code VARCHAR (50),
+  name VARCHAR (150),
+  description VARCHAR (2000),
+  template_id BIGINT,
+  type VARCHAR (50),
+  CONSTRAINT attribute_pk PRIMARY KEY (id),
+  CONSTRAINT attribute_template_fk FOREIGN KEY (template_id) REFERENCES template (id)
 );
 
-create table ATTRIBUTE (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  TEMPLATE_ID bigint,
-  ATTRIBUTE_TYPE_ID bigint,
-  constraint ATTRIBUTE_PK primary key (ID),
-  constraint ATTRIBUTE_TEMPLATE_FK foreign key (TEMPLATE_ID) references TEMPLATE (ID),
-  constraint ATTRIBUTE_ATTRIBUTE_TYPE_FK foreign key (ATTRIBUTE_TYPE_ID) references ATTRIBUTE_TYPE (ID)
+CREATE TABLE link (
+  id BIGINT NOT NULL,
+  code VARCHAR (50),
+  name VARCHAR (150),
+  description VARCHAR (2000),
+  left_template BIGINT,
+  TEMPLATE_2_id BIGINT,
+  LINK_TYPE_id BIGINT,
+  CONSTRAINT link_pk PRIMARY KEY (id),
+  CONSTRAINT LINK_TEMPLATE_1_FK FOREIGN KEY (TEMPLATE_1_id) REFERENCES TEMPLATE (id),
+  CONSTRAINT LINK_TEMPLATE_2_FK FOREIGN KEY (TEMPLATE_2_id) REFERENCES TEMPLATE (id)
 );
 
-create table LINK_TYPE (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  constraint LINK_TYPE_PK primary key (ID)
+CREATE TABLE status (
+  id BIGINT NOT NULL,
+  code VARCHAR (50),
+  name VARCHAR (150),
+  description VARCHAR (2000),
+  template_id BIGINT,
+  initial BOOLEAN,
+  CONSTRAINT STATUS_PK PRIMARY KEY (id),
+  CONSTRAINT STATUS_TEMPLATE_FK FOREIGN KEY (TEMPLATE_id) REFERENCES TEMPLATE (id)
 );
 
-create table LINK (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  TEMPLATE_1_ID bigint,
-  TEMPLATE_2_ID bigint,
-  LINK_TYPE_ID bigint,
-  constraint LINK_PK primary key (ID),
-  constraint LINK_TEMPLATE_1_FK foreign key (TEMPLATE_1_ID) references TEMPLATE (ID),
-  constraint LINK_TEMPLATE_2_FK foreign key (TEMPLATE_2_ID) references TEMPLATE (ID),
-  constraint LINK_LINK_TYPE_FK foreign key (LINK_TYPE_ID) references LINK_TYPE (ID)
+CREATE TABLE TRANSITION (
+  id BIGINT NOT NULL,
+  SOURCE_STATUS_id BIGINT,
+  DESTINATION_STATUS_id BIGINT,
+  CONSTRAINT TRANSITION_PK PRIMARY KEY (id),
+  CONSTRAINT TRANSITION_STATUS_SRC_FK FOREIGN KEY (SOURCE_STATUS_id) REFERENCES STATUS (id),
+  CONSTRAINT TRANSITION_STATUS_DEST_FK FOREIGN KEY (DESTINATION_STATUS_id) REFERENCES STATUS (id)
 );
 
-create table STATUS_STAGE (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  constraint STATUS_STAGE_PK primary key (ID)
+CREATE TABLE TRANSITION_PERMISSIONS (
+  TRANSITION_id BIGINT NOT NULL,
+  ROLE_id BIGINT NOT NULL,
+  CONSTRAINT TRANSITION_PERMISSIONS_PK PRIMARY KEY (TRANSITION_id, ROLE_id),
+  CONSTRAINT TRANSITION_PERMISSIONS_TRANSITION_FK FOREIGN KEY (TRANSITION_id) REFERENCES TRANSITION (id),
+  CONSTRAINT TRANSITION_PERMISSIONS_ROLE_FK FOREIGN KEY (ROLE_id) REFERENCES ROLE (id),
 );
 
-create table STATUS (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  TEMPLATE_ID bigint,
-  STATUS_STAGE_ID bigint,
-  constraint STATUS_PK primary key (ID),
-  constraint STATUS_TEMPLATE_FK foreign key (TEMPLATE_ID) references TEMPLATE (ID),
-  constraint STATUS_STATUS_STAGE_FK foreign key (STATUS_STAGE_ID) references STATUS_STAGE (ID)
+CREATE TABLE PROFILE (
+  id BIGINT NOT NULL,
+  PRINCIPAL_id BIGINT,
+  PROJECT_id BIGINT,
+  CONSTRAINT PROFILE_PK PRIMARY KEY (id),
+  CONSTRAINT PROFILE_PRINCIPAL_FK FOREIGN KEY (PRINCIPAL_id) REFERENCES PRINCIPAL (id),
+  CONSTRAINT PROFILE_PROJECT_FK FOREIGN KEY (PROJECT_id) REFERENCES PROJECT (id)
 );
 
-create table TRANSITION (
-  ID bigint not null,
-  SOURCE_STATUS_ID bigint,
-  DESTINATION_STATUS_ID bigint,
-  constraint TRANSITION_PK primary key (ID),
-  constraint TRANSITION_STATUS_SRC_FK foreign key (SOURCE_STATUS_ID) references STATUS (ID),
-  constraint TRANSITION_STATUS_DEST_FK foreign key (DESTINATION_STATUS_ID) references STATUS (ID)
+CREATE TABLE PRINCIPAL_ROLES (
+  PROFILE_id BIGINT,
+  ROLE_id BIGINT,
+  CONSTRAINT PRINCIPAL_ROLES_PK PRIMARY KEY (PROFILE_id, ROLE_id),
+  CONSTRAINT PRINCIPAL_ROLES_PROFILE_FK FOREIGN KEY (PROFILE_id) REFERENCES PROFILE (id),
+  CONSTRAINT PRINCIPAL_ROLES_ROLE_FK FOREIGN KEY (ROLE_id) REFERENCES ROLE (id)
 );
 
-create table TRANSITION_PERMISSIONS (
-  TRANSITION_ID bigint not null,
-  ROLE_ID bigint not null,
-  constraint TRANSITION_PERMISSIONS_PK primary key (TRANSITION_ID, ROLE_ID),
-  constraint TRANSITION_PERMISSIONS_TRANSITION_FK foreign key (TRANSITION_ID) references TRANSITION (ID),
-  constraint TRANSITION_PERMISSIONS_ROLE_FK foreign key (ROLE_ID) references ROLE (ID),
+CREATE TABLE TEMPLATE_PERMISSIONS (
+  TEMPLATE_id BIGINT NOT NULL,
+  ROLE_id BIGINT NOT NULL,
+  PERMISSION_id BIGINT,
+  CONSTRAINT TEMPLATE_PERMISSIONS_PK PRIMARY KEY (TEMPLATE_id, ROLE_id),
+  CONSTRAINT TEMPLATE_PERMISSIONS_PROFILE_FK FOREIGN KEY (TEMPLATE_id) REFERENCES TEMPLATE (id),
+  CONSTRAINT TEMPLATE_PERMISSIONS_ROLE_FK FOREIGN KEY (ROLE_id) REFERENCES ROLE (id)
 );
 
-create table PROFILE (
-  ID bigint not null,
-  PRINCIPAL_ID bigint,
-  PROJECT_ID bigint,
-  constraint PROFILE_PK primary key (ID),
-  constraint PROFILE_PRINCIPAL_FK foreign key (PRINCIPAL_ID) references PRINCIPAL (ID),
-  constraint PROFILE_PROJECT_FK foreign key (PROJECT_ID) references PROJECT (ID)
+CREATE TABLE ATTRIBUTE_PERMISSIONS (
+  ATTRIBUTE_id BIGINT NOT NULL,
+  ROLE_id BIGINT NOT NULL,
+  PERMISSION_id BIGINT,
+  CONSTRAINT ATTRIBUTE_PERMISSIONS_PK PRIMARY KEY (ATTRIBUTE_id, ROLE_id),
+  CONSTRAINT ATTRIBUTE_PERMISSIONS_ATTRIBUTE_FK FOREIGN KEY (ATTRIBUTE_id) REFERENCES ATTRIBUTE (id),
+  CONSTRAINT ATTRIBUTE_PERMISSIONS_ROLE_FK FOREIGN KEY (ROLE_id) REFERENCES ROLE (id)
 );
 
-create table PRINCIPAL_ROLES (
-  PROFILE_ID bigint,
-  ROLE_ID bigint,
-  constraint PRINCIPAL_ROLES_PK primary key (PROFILE_ID, ROLE_ID),
-  constraint PRINCIPAL_ROLES_PROFILE_FK foreign key (PROFILE_ID) references PROFILE (ID),
-  constraint PRINCIPAL_ROLES_ROLE_FK foreign key (ROLE_ID) references ROLE (ID)
+CREATE TABLE LINK_PERMISSIONS (
+  LINK_id BIGINT NOT NULL,
+  ROLE_id BIGINT NOT NULL,
+  PERMISSION_id BIGINT,
+  CONSTRAINT LINK_PERMISSIONS_PK PRIMARY KEY (LINK_id, ROLE_id),
+  CONSTRAINT LINK_PERMISSIONS_FK FOREIGN KEY (LINK_id) REFERENCES LINK (id),
+  CONSTRAINT LINK_PERMISSIONS_ROLE_FK FOREIGN KEY (ROLE_id) REFERENCES ROLE (id)
 );
 
-create table PERMISSION_TYPE (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  constraint PERMISSION_TYPE_PK primary key (ID)
+CREATE TABLE ATTRIBUTE_GRANTS (
+  ATTRIBUTE_id BIGINT NOT NULL,
+  STATUS_id BIGINT NOT NULL,
+  PERMISSION_id BIGINT,
+  CONSTRAINT ATTRIBUTE_GRANTS_PK PRIMARY KEY (ATTRIBUTE_id, STATUS_id),
+  CONSTRAINT ATTRIBUTE_GRANTS_ATTRIBUTE_FK FOREIGN KEY (ATTRIBUTE_id) REFERENCES ATTRIBUTE (id),
+  CONSTRAINT ATTRIBUTE_GRANTS_STATUS_FK FOREIGN KEY (STATUS_id) REFERENCES STATUS (id)
 );
 
-create table PERMISSION (
-  ID bigint not null,
-  CODE varchar (50),
-  NAME varchar (150),
-  DESCRIPTION varchar (2000),
-  PERMISSION_TYPE_ID bigint,
-  constraint PERMISSION_PK primary key (ID),
-  constraint PERMISSION_PERMISSION_TYPE_FK foreign key (PERMISSION_TYPE_ID) references PERMISSION_TYPE (ID)
-);
-
-create table TEMPLATE_PERMISSIONS (
-  TEMPLATE_ID bigint not null,
-  ROLE_ID bigint not null,
-  PERMISSION_ID bigint,
-  constraint TEMPLATE_PERMISSIONS_PK primary key (TEMPLATE_ID, ROLE_ID),
-  constraint TEMPLATE_PERMISSIONS_PROFILE_FK foreign key (TEMPLATE_ID) references TEMPLATE (ID),
-  constraint TEMPLATE_PERMISSIONS_ROLE_FK foreign key (ROLE_ID) references ROLE (ID),
-  constraint TEMPLATE_PERMISSIONS_PERMISSION_FK foreign key (PERMISSION_ID) references PERMISSION (ID)
-);
-
-create table ATTRIBUTE_PERMISSIONS (
-  ATTRIBUTE_ID bigint not null,
-  ROLE_ID bigint not null,
-  PERMISSION_ID bigint,
-  constraint ATTRIBUTE_PERMISSIONS_PK primary key (ATTRIBUTE_ID, ROLE_ID),
-  constraint ATTRIBUTE_PERMISSIONS_ATTRIBUTE_FK foreign key (ATTRIBUTE_ID) references ATTRIBUTE (ID),
-  constraint ATTRIBUTE_PERMISSIONS_ROLE_FK foreign key (ROLE_ID) references ROLE (ID),
-  constraint ATTRIBUTE_PERMISSIONS_PERMISSION_FK foreign key (PERMISSION_ID) references PERMISSION (ID)
-);
-
-create table LINK_PERMISSIONS (
-  LINK_ID bigint not null,
-  ROLE_ID bigint not null,
-  PERMISSION_ID bigint,
-  constraint LINK_PERMISSIONS_PK primary key (LINK_ID, ROLE_ID),
-  constraint LINK_PERMISSIONS_FK foreign key (LINK_ID) references LINK (ID),
-  constraint LINK_PERMISSIONS_ROLE_FK foreign key (ROLE_ID) references ROLE (ID),
-  constraint LINK_PERMISSIONS_PERMISSION_FK foreign key (PERMISSION_ID) references PERMISSION (ID)
-);
-
-create table ATTRIBUTE_GRANTS (
-  ATTRIBUTE_ID bigint not null,
-  STATUS_ID bigint not null,
-  PERMISSION_ID bigint,
-  constraint ATTRIBUTE_GRANTS_PK primary key (ATTRIBUTE_ID, STATUS_ID),
-  constraint ATTRIBUTE_GRANTS_ATTRIBUTE_FK foreign key (ATTRIBUTE_ID) references ATTRIBUTE (ID),
-  constraint ATTRIBUTE_GRANTS_STATUS_FK foreign key (STATUS_ID) references STATUS (ID),
-  constraint ATTRIBUTE_GRANTS_PERMISSION_FK foreign key (PERMISSION_ID) references PERMISSION (ID)
-);
-
-create table LINK_GRANTS (
-  LINK_ID bigint not null,
-  STATUS_ID bigint not null,
-  PERMISSION_ID bigint,
-  constraint LINK_GRANTS_PK primary key (LINK_ID, STATUS_ID),
-  constraint LINK_GRANTS_LINK_FK foreign key (LINK_ID) references LINK (ID),
-  constraint LINK_GRANTS_STATUS_FK foreign key (STATUS_ID) references STATUS (ID),
-  constraint LINK_GRANTS_PERMISSION_FK foreign key (PERMISSION_ID) references PERMISSION (ID)
+CREATE TABLE LINK_GRANTS (
+  LINK_id BIGINT NOT NULL,
+  STATUS_id BIGINT NOT NULL,
+  PERMISSION_id BIGINT,
+  CONSTRAINT LINK_GRANTS_PK PRIMARY KEY (LINK_id, STATUS_id),
+  CONSTRAINT LINK_GRANTS_LINK_FK FOREIGN KEY (LINK_id) REFERENCES LINK (id),
+  CONSTRAINT LINK_GRANTS_STATUS_FK FOREIGN KEY (STATUS_id) REFERENCES STATUS (id)
 );

@@ -11,7 +11,7 @@
     </session-config>
     
     <servlet>
-        <servlet-name>ru.petrosoft.erratum.rest.RestApplication</servlet-name>
+        <servlet-name>ru.skycelot.plicanterra.rest.RestApplication</servlet-name>
         <init-param>
             <param-name>javax.ws.rs.Application</param-name>
             <param-value>RestApplication</param-value>

@@ -11,6 +11,7 @@ import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import ru.skycelot.metamodel.service.MetamodelCrud;
+import ru.skycelot.plicanterra.metamodel.Project;
 import ru.skycelot.plicanterra.metamodel.User;
 import ru.skycelot.plicanterra.properties.ApplicationPropertiesBean;
 
@@ -18,7 +19,7 @@ import ru.skycelot.plicanterra.properties.ApplicationPropertiesBean;
  *
  */
 @Singleton
-@Startup
+//@Startup
 @Lock(LockType.READ)
 @EJB(name = "java:global/erratum/SecurityService", beanInterface = UserService.class)
 @PermitAll
@@ -35,7 +36,8 @@ public class UserService {
     @PostConstruct
     public void init() {
         String applicationCode = properties.getApplicationCode();
-        List<User> users = crud.loadUsers(applicationCode);
+        Project project = crud.loadProject(applicationCode);
+        List<User> users = crud.loadUsers(project);
         this.users = users.stream().collect(Collectors.toMap(user -> user.login, user -> user));
     }
 
